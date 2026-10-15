@@ -1,0 +1,12 @@
+# XAMPP / OS
+.opencode/
+_ciric_backup_round1/
+_ciric_verified_final/
+Thumbs.db
+Desktop.ini
+*.log
+
+# Keep DB template, ignore local dumps
+*.sql.gz
+
+tools/*.exe

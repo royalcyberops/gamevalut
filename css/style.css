@@ -247,7 +247,11 @@ h1, h2, h3 { color: #fff; font-weight: 700; letter-spacing: -0.02em; }
 
 .slides {
   display: flex;
-  overflow: hidden;
+  /* NOTE: no overflow:hidden here — .hero clips instead.
+     The strip itself is translated by showSlide(); hiding
+     overflow on the strip would clip slides 2..n AND move
+     the whole clipped box, leaving a blank hero. */
+  overflow: visible;
   scroll-behavior: smooth;
   transition: transform 0.55s cubic-bezier(0.23, 1, 0.32, 1);
 }
@@ -256,6 +260,7 @@ h1, h2, h3 { color: #fff; font-weight: 700; letter-spacing: -0.02em; }
   flex: 0 0 100%;
   display: flex;
   min-height: 360px;
+  position: relative;
   background: linear-gradient(135deg, #10121c 0%, #1c2030 60%, #121420 100%);
 }
 

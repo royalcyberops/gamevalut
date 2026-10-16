@@ -172,20 +172,10 @@ document.addEventListener('DOMContentLoaded', function () {
     checkoutForm.onsubmit = function () { return validateCheckout(); };
   }
 
-  /* ---------------- Password show/hide toggle ---------------- */
-  // VIVA: buttons with class .toggle-pass and data-target="<input id>"
-  // flip the input type between password and text, and swap the icon.
-  var toggles = document.querySelectorAll('.toggle-pass[data-target]');
-  toggles.forEach(function (btn) {
-    btn.addEventListener('click', function () {
-      var input = document.getElementById(btn.getAttribute('data-target'));
-      if (!input) return;
-      var show = input.type === 'password';
-      input.type = show ? 'text' : 'password';
-      btn.textContent = show ? 'Hide' : 'Show';
-      btn.setAttribute('aria-pressed', show ? 'true' : 'false');
-    });
-  });
+  // NOTE: password show/hide (.toggle-pass) is handled in js/main.js
+  // (loaded on every page via the footer). It must NOT be bound here too —
+  // two listeners on the same button toggle twice per click (show then
+  // instantly hide), which makes the button look dead.
 
   // Expose validators globally so inline onsubmit="return validateX()"
   // also works if a page uses inline handlers. VIVA: window.* makes

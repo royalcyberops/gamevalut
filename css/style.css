@@ -249,6 +249,7 @@ h1, h2, h3 { color: #fff; font-weight: 700; letter-spacing: -0.02em; }
   display: flex;
   overflow: hidden;
   scroll-behavior: smooth;
+  transition: transform 0.55s cubic-bezier(0.23, 1, 0.32, 1);
 }
 
 .slide {

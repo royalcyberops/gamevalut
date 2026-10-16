@@ -120,6 +120,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function showSlide(i) {
       current = ((i % slides.length) + slides.length) % slides.length;
+      slidesWrap.style.transform = 'translateX(-' + (current * 100) + '%)';
       slides.forEach(function (s, idx) {
         s.classList.toggle('active', idx === current);
       });

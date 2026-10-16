@@ -90,10 +90,31 @@ try {
     }
     out("Executed $ran SQL statements from database.sql.");
 
+    // 4b. Ensure the staff account exists (fresh database.sql has tables but no users).
+    // Never overwrite: only INSERT when neither the username nor email is taken.
+    $adm_chk = $pdo->prepare("SELECT user_id FROM `$DB_NAME`.`users` WHERE `username` = ? OR `email` = ? LIMIT 1");
+    $adm_chk->execute(['admin', 'admin@gamevault.local']);
+    if ($adm_chk->fetch()) {
+        $pdo->prepare("UPDATE `$DB_NAME`.`users` SET `is_admin` = 1 WHERE `username` = ? OR `email` = ?")
+            ->execute(['admin', 'admin@gamevault.local']);
+        out('Admin account already exists — ensured is_admin = 1.');
+    } else {
+        $adm_ins = $pdo->prepare(
+            "INSERT INTO `$DB_NAME`.`users` (full_name, email, mobile, username, password, is_admin)
+             VALUES (?, ?, ?, ?, ?, 1)"
+        );
+        $adm_ins->execute([
+            'Store Admin', 'admin@gamevault.local', '9876543210', 'admin',
+            password_hash('Admin@123', PASSWORD_DEFAULT),
+        ]);
+        out('Admin account created: username `admin` / password `Admin@123`.');
+    }
+
     // 5. Verify.
     $games = (int) $pdo->query("SELECT COUNT(*) AS c FROM `$DB_NAME`.`games`")->fetch(PDO::FETCH_ASSOC)['c'];
     $cats  = (int) $pdo->query("SELECT COUNT(*) AS c FROM `$DB_NAME`.`categories`")->fetch(PDO::FETCH_ASSOC)['c'];
     echo '<p class="ok"><strong>Done!</strong> Database `' . htmlspecialchars($DB_NAME) . '` ready: ' . $games . ' games, ' . $cats . ' categories.</p>';
+    echo '<p style="font-size:.85rem">Staff login: <code>admin</code> / <code>Admin@123</code> (change it after first login).</p>';
     echo '<a class="btn" href="../index.php">Open GameVault</a>';
 } catch (Throwable $e) {
     // Log the real error server-side; show a friendly hint in the browser.

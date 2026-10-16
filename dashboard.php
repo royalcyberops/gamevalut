@@ -19,7 +19,9 @@ $msg_class = '';
 // ---- Flash messages from redirects (order placed / admin denied) ----
 if (isset($_GET['msg'])) {
     if ($_GET['msg'] === 'order_placed') {
-        $oid = (is_numeric($_GET['order_id'] ?? 0)) ? (int) $_GET['order_id'] : 0;
+        // Single-read guard (?msg=order_placed without order_id must not warn).
+        $raw_oid = $_GET['order_id'] ?? 0;
+        $oid = (is_numeric($raw_oid)) ? (int) $raw_oid : 0;
         $message   = 'Order placed! Your order ID is #' . $oid . '. Pay in cash on delivery.';
         $msg_class = 'msg-success';
     } elseif ($_GET['msg'] === 'forbidden') {

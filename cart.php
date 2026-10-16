@@ -22,9 +22,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $msg_class = 'msg-error';
     } else {
         $action = is_string($_POST['action'] ?? '') ? $_POST['action'] : '';
+        // Single-read guards: re-reading $_POST['x'] in the true-branch after
+        // a ?? check still warns when the key is missing (index.php add-forms
+        // send no quantity), so read once into a temp first.
+        $raw_game = $_POST['game_id'] ?? 0;
+        $raw_qty  = $_POST['quantity'] ?? 1;
         // is_numeric() guard: ?game_id[]=x style arrays must not reach (int) casts.
-        $game_id = (is_numeric($_POST['game_id'] ?? 0)) ? (int) $_POST['game_id'] : 0;
-        $qty     = (is_numeric($_POST['quantity'] ?? 1)) ? (int) $_POST['quantity'] : 1;
+        $game_id = (is_numeric($raw_game)) ? (int) $raw_game : 0;
+        $qty     = (is_numeric($raw_qty)) ? (int) $raw_qty : 1;
 
         if ($action === 'add' && $game_id > 0) {
             // Only add games that actually exist (price lookup is authoritative).

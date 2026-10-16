@@ -24,7 +24,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if ($form === 'status') {
             // Update one order's status (any user, any transition — admin decides).
-            $order_id   = (is_numeric($_POST['order_id'] ?? 0)) ? (int) $_POST['order_id'] : 0;
+            // Single-read: the ?? in the check must not be re-read in the branch.
+            $raw_oid = $_POST['order_id'] ?? 0;
+            $order_id   = (is_numeric($raw_oid)) ? (int) $raw_oid : 0;
             $new_status = is_string($_POST['new_status'] ?? '') ? $_POST['new_status'] : '';
             if ($order_id <= 0 || !in_array($new_status, $valid_statuses, true)) {
                 $message   = 'Invalid order or status.';
@@ -48,7 +50,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } elseif ($form === 'add_game') {
             // Add a catalogue game (genre comes from the chosen category — no duplication).
             $title       = is_string($_POST['title'] ?? '') ? trim($_POST['title']) : '';
-            $category_id = (is_numeric($_POST['category_id'] ?? 0)) ? (int) $_POST['category_id'] : 0;
+            // Single-read guard (same ?? re-read warning as above).
+            $raw_cat = $_POST['category_id'] ?? 0;
+            $category_id = (is_numeric($raw_cat)) ? (int) $raw_cat : 0;
             $platform    = is_string($_POST['platform'] ?? '') ? trim($_POST['platform']) : '';
             $price_raw   = is_string($_POST['price'] ?? '') ? trim($_POST['price']) : '';
             $disc_raw    = is_string($_POST['discount'] ?? '') ? trim($_POST['discount']) : '';

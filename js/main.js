@@ -4,6 +4,10 @@
 
 document.addEventListener('DOMContentLoaded', function () {
 
+  // Progressive-enhancement flag: CSS entrance states (.reveal, hero text)
+  // are scoped under .js so content stays visible if this script fails.
+  document.documentElement.classList.add('js');
+
   /* ---------------------------------------------------------
    * 0. Toast notification system — showToast(type, message)
    * Appends a toast to #toastContainer (creates it if missing).
@@ -258,7 +262,19 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   /* ---------------------------------------------------------
-   * 5. Scroll reveal — elements with .reveal fade in on scroll
+   * 5. Stagger grid entrances — children of card grids reveal one
+   *    after another via --d (consumed by .reveal in style.css).
+   *    Must run BEFORE the reveal observer below observes them.
+   * --------------------------------------------------------- */
+  document.querySelectorAll('.games-grid, .categories-grid, .stat-row').forEach(function (grid) {
+    Array.prototype.forEach.call(grid.children, function (child, i) {
+      child.classList.add('reveal');
+      child.style.setProperty('--d', ((i % 8) * 70) + 'ms');
+    });
+  });
+
+  /* ---------------------------------------------------------
+   * 6. Scroll reveal — elements with .reveal fade in on scroll
    * --------------------------------------------------------- */
   var revealEls = document.querySelectorAll('.reveal');
   if (revealEls.length > 0) {
@@ -274,7 +290,7 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   /* ---------------------------------------------------------
-   * 6. Password show/hide toggle (data-target)
+   * 7. Password show/hide toggle (data-target)
    * --------------------------------------------------------- */
   var toggles = document.querySelectorAll('.toggle-pass[data-target]');
   toggles.forEach(function (btn) {
@@ -289,7 +305,7 @@ document.addEventListener('DOMContentLoaded', function () {
   });
 
   /* ---------------------------------------------------------
-   * 7. Back to top button — shows after 300px scroll,
+   * 8. Back to top button — shows after 300px scroll,
    *    smooth scroll to top on click.
    * --------------------------------------------------------- */
   var backToTop = document.getElementById('backToTop');
@@ -312,5 +328,62 @@ document.addEventListener('DOMContentLoaded', function () {
     backToTop.addEventListener('click', function () {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     });
+  }
+
+  /* ---------------------------------------------------------
+   * 9. Stat count-up — .stat-num counts from 0 on first view.
+   *    Parses prefix (₹), number (commas/decimals preserved),
+   *    suffix. Reduced-motion users get the final value instantly.
+   * --------------------------------------------------------- */
+  var reduceMotion = window.matchMedia &&
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  document.querySelectorAll('.stat-num').forEach(function (el) {
+    var text = el.textContent || '';
+    var m = text.match(/^([^0-9]*)([0-9,]+(?:\.[0-9]+)?)([\s\S]*)$/);
+    if (!m) return; // non-numeric stat (e.g. badge text) — leave as-is
+    var prefix = m[1], suffix = m[3];
+    var target = parseFloat(m[2].replace(/,/g, ''));
+    var decimals = (m[2].indexOf('.') >= 0) ? m[2].split('.')[1].length : 0;
+    if (isNaN(target)) return;
+
+    function render(v) {
+      el.textContent = prefix +
+        v.toLocaleString('en-IN', { minimumFractionDigits: decimals, maximumFractionDigits: decimals }) +
+        suffix;
+    }
+    if (reduceMotion) { render(target); return; }
+
+    var done = false;
+    var counter = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (!entry.isIntersecting || done) return;
+        done = true;
+        var start = null, DUR = 900;
+        function tick(now) {
+          if (start === null) start = now;
+          var p = Math.min((now - start) / DUR, 1);
+          var eased = 1 - Math.pow(1 - p, 3); // easeOutCubic
+          render(target * eased);
+          if (p < 1) window.requestAnimationFrame(tick);
+          else render(target); // snap exact (no float dust)
+        }
+        window.requestAnimationFrame(tick);
+        counter.unobserve(entry.target);
+      });
+    }, { threshold: 0.4 });
+    counter.observe(el);
+  });
+
+  /* ---------------------------------------------------------
+   * 10. Cart badge pulse — after "Added to cart", the nav Cart
+   *     link pulses once so the success is visible site-wide.
+   * --------------------------------------------------------- */
+  if (document.querySelector('.msg-success')) {
+    var cartLink = document.querySelector('.nav-links a[href="cart.php"]');
+    if (cartLink) {
+      cartLink.classList.add('pulse');
+      setTimeout(function () { cartLink.classList.remove('pulse'); }, 700);
+    }
   }
 });

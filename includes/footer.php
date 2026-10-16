@@ -41,6 +41,7 @@
 <!-- Back to top button -->
 <button id="backToTop" class="btn back-to-top" aria-label="Back to top">&u2191;</button>
 
-<script src="js/main.js"></script>
+<?php $js_v = @filemtime(__DIR__ . '/../js/main.js') ?: time(); ?>
+<script src="js/main.js?v=<?php echo (int)$js_v; ?>"></script>
 </body>
 </html>

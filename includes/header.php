@@ -15,7 +15,8 @@ $hello_name  = $is_logged ? htmlspecialchars($_SESSION['username']) : '';
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title><?php echo htmlspecialchars($page_title); ?> | GameVault</title>
-<link rel="stylesheet" href="css/style.css">
+<?php $css_v = @filemtime(__DIR__ . '/../css/style.css') ?: time(); ?>
+<link rel="stylesheet" href="css/style.css?v=<?php echo (int)$css_v; ?>">
 </head>
 <body>
 <a href="#main" class="skip-link">Skip to main content</a>

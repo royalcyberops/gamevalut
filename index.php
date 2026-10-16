@@ -190,6 +190,15 @@ require_once __DIR__ . '/includes/header.php';
   <div id="dots" class="dots"></div>
 </section>
 
+<!-- ================= QUICK FILTER BY GENRE (moved up: filters the grids below) ================= -->
+<h2 class="section-title reveal">Quick Filter by Genre</h2>
+<div class="genre-chips reveal">
+  <button class="chip active" data-genre="all" type="button">All</button>
+  <?php foreach ($genres as $genre): ?>
+    <button class="chip" data-genre="<?php echo htmlspecialchars($genre); ?>" type="button"><?php echo htmlspecialchars($genre); ?></button>
+  <?php endforeach; ?>
+</div>
+
 <!-- ================= BROWSE BY CATEGORY ================= -->
 <h2 class="section-title reveal" id="categories">Browse by Category</h2>
 <?php if (!empty($categories)): ?>
@@ -283,15 +292,6 @@ require_once __DIR__ . '/includes/header.php';
       </article>
     <?php endforeach; ?>
   <?php endif; ?>
-</div>
-
-<!-- ================= BROWSE BY GENRE (quick JS filter) ================= -->
-<h2 class="section-title reveal">Quick Filter by Genre</h2>
-<div class="genre-chips reveal">
-  <button class="chip active" data-genre="all" type="button">All</button>
-  <?php foreach ($genres as $genre): ?>
-    <button class="chip" data-genre="<?php echo htmlspecialchars($genre); ?>" type="button"><?php echo htmlspecialchars($genre); ?></button>
-  <?php endforeach; ?>
 </div>
 
 <?php require_once __DIR__ . '/includes/footer.php'; ?>

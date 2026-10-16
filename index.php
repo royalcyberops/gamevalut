@@ -21,10 +21,29 @@ function final_price($price, $disc) {
 }
 
 /**
- * CSS cover variant g0-g5 derived from game id (no images needed).
+ * CSS cover variant g0-g5 derived from game id (used as fallback when no image).
  */
 function cover_class($id) {
     return 'g' . (((int)$id) % 6);
+}
+
+/**
+ * Cover HTML: real <img> when the game has a valid assets/img/ image,
+ * otherwise the gradient letter fallback. All output escaped.
+ */
+function cover_html($g, $extra = '') {
+    $gid     = (int)($g['game_id'] ?? 0);
+    $title   = (string)($g['title'] ?? 'Game');
+    $img     = isset($g['image']) ? trim((string)$g['image']) : '';
+    $initial = strtoupper(substr($title, 0, 1));
+    $cls     = trim('game-cover ' . $extra . ' ' . cover_class($gid));
+    // Whitelist: only local assets/img/*.jpg|png|webp|svg allowed (no remote URLs).
+    if ($img !== '' && preg_match('#^assets/img/[a-z0-9-]+\.(jpg|jpeg|png|webp|svg)$#i', $img)) {
+        return '<div class="' . htmlspecialchars($cls) . ' has-img">' .
+               '<img src="' . htmlspecialchars($img) . '" alt="' . htmlspecialchars($title) . ' cover" loading="lazy">' .
+               '</div>';
+    }
+    return '<div class="' . htmlspecialchars($cls) . '"><span>' . htmlspecialchars($initial === '' ? 'G' : $initial) . '</span></div>';
 }
 
 /**
@@ -146,7 +165,7 @@ require_once __DIR__ . '/includes/header.php';
           $initial = strtoupper(substr($g['title'], 0, 1));
         ?>
         <div class="slide<?php echo $i === 0 ? ' active' : ''; ?>">
-          <div class="game-cover big <?php echo htmlspecialchars(cover_class($gid)); ?>"><span><?php echo htmlspecialchars($initial); ?></span></div>
+          <?php echo cover_html($g, 'big'); ?>
           <div class="slide-info">
             <span class="genre-tag"><?php echo htmlspecialchars($g['genre']); ?></span>
             <h2><?php echo htmlspecialchars($g['title']); ?></h2>
@@ -212,7 +231,7 @@ require_once __DIR__ . '/includes/header.php';
       $initial = strtoupper(substr($g['title'], 0, 1));
     ?>
     <article class="game-card" data-genre="<?php echo htmlspecialchars($g['genre']); ?>">
-      <div class="game-cover <?php echo htmlspecialchars(cover_class($gid)); ?>"><span><?php echo htmlspecialchars($initial); ?></span></div>
+      <?php echo cover_html($g); ?>
       <div class="game-body">
         <h3><?php echo htmlspecialchars($g['title']); ?></h3>
         <div>
@@ -247,7 +266,7 @@ require_once __DIR__ . '/includes/header.php';
         $initial = strtoupper(substr($g['title'], 0, 1));
       ?>
       <article class="game-card" data-genre="<?php echo htmlspecialchars($g['genre']); ?>">
-        <div class="game-cover <?php echo htmlspecialchars(cover_class($gid)); ?>"><span><?php echo htmlspecialchars($initial); ?></span></div>
+        <?php echo cover_html($g); ?>
         <div class="game-body">
           <h3><?php echo htmlspecialchars($g['title']); ?></h3>
           <div>

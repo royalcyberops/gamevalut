@@ -39,7 +39,7 @@ $hello_name  = $is_logged ? htmlspecialchars($_SESSION['username']) : '';
         <!-- Logout is state-changing: POST + CSRF token (a plain link would be CSRF-able). -->
         <form method="post" action="logout.php" style="display:inline;">
           <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrf_token()); ?>">
-          <button type="submit" class="btn btn-ghost btn-block" style="padding:10px 14px; font-size:0.9rem;">Logout</button>
+          <button type="submit" class="logout-btn">Logout</button>
         </form>
         <span class="hi-user">Hi, <?php echo $hello_name; ?></span>
       <?php endif; ?>

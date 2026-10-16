@@ -275,4 +275,30 @@ document.addEventListener('DOMContentLoaded', function () {
       btn.setAttribute('aria-pressed', show ? 'true' : 'false');
     });
   });
+
+  /* ---------------------------------------------------------
+   * 7. Back to top button — shows after 300px scroll,
+   *    smooth scroll to top on click.
+   * --------------------------------------------------------- */
+  var backToTop = document.getElementById('backToTop');
+  if (backToTop) {
+    var ticking = false;
+    function updateBackToTop() {
+      if (window.scrollY > 300) {
+        backToTop.classList.add('visible');
+      } else {
+        backToTop.classList.remove('visible');
+      }
+      ticking = false;
+    }
+    window.addEventListener('scroll', function () {
+      if (!ticking) {
+        window.requestAnimationFrame(updateBackToTop);
+        ticking = true;
+      }
+    });
+    backToTop.addEventListener('click', function () {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  }
 });

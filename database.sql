@@ -93,20 +93,33 @@ ON DUPLICATE KEY UPDATE name=VALUES(name);
 -- Sample data: at least 12 games across 7 genres, prices in INR
 -- ------------------------------------------------------------
 INSERT INTO games (title, genre, platform, price, discount_percent, description, image, release_date) VALUES
-('Shadow Strike: Elite Ops', 'Action', 'PC, PS5, Xbox', 1499.00, 50, 'Tactical third-person shooter with co-op missions, stealth routes and explosive set pieces.', NULL, '2023-08-15'),
-('Elder Realms: Dragonfire', 'RPG', 'PC, PS5', 1999.00, 30, 'Open-world fantasy RPG with dragon taming, branching quests and 80+ hours of story.', NULL, '2022-11-20'),
-('Turbo Velocity GP', 'Racing', 'PC, PS5, Xbox, Switch', 999.00, 20, 'Arcade racing with 40 tracks, split-screen multiplayer and full controller support.', NULL, '2023-03-10'),
-('Pro League Football 25', 'Sports', 'PC, PS5, Xbox', 2499.00, 15, 'Realistic football sim with career mode, local clubs pack and online tournaments.', NULL, '2024-01-12'),
-('Iron Kingdoms: Siege', 'Strategy', 'PC', 1299.00, 40, 'Medieval real-time strategy with base building, sieges and ranked ladder.', NULL, '2021-09-05'),
-('Nightmare Hollow', 'Horror', 'PC, PS5, Xbox', 1199.00, 50, 'Survival horror in an abandoned hill station. Limited ammo, puzzles and multiple endings.', NULL, '2023-10-31'),
-('Pixel Harvest Tales', 'Indie', 'PC, Switch', 499.00, 10, 'Cozy farming sim with pixel art, festivals and 4-player co-op.', NULL, '2022-05-18'),
-('Cyber Ronin 2077', 'Action', 'PC, PS5', 1799.00, 25, 'Neon samurai action with katana combat, hacking and a synthwave city to explore.', NULL, '2023-06-22'),
-('Mystic Isles Odyssey', 'RPG', 'PC, Switch', 1599.00, 0, 'Story-rich island adventure with turn-based combat and monster companions.', NULL, '2024-02-14'),
-('Desert Rally Fury', 'Racing', 'PC, Xbox', 899.00, 60, 'Off-road rally racer across deserts with dune buggies, trucks and time trials.', NULL, '2021-12-01'),
-('Galactic Commanders', 'Strategy', 'PC', 1399.00, 35, 'Sci-fi grand strategy. Command fleets, colonise planets and forge alliances.', NULL, '2022-08-30'),
-('Cricket Champions League', 'Sports', 'PC, PS5, Xbox', 1899.00, 20, 'Cricket sim with T20 leagues, realistic physics and India home grounds.', NULL, '2023-04-07'),
-('Echoes of the Deep', 'Horror', 'PC, Switch', 799.00, 0, 'Atmospheric underwater horror mystery with diving, sonar and light management.', NULL, '2024-05-25'),
-('Starforge Pioneers', 'Indie', 'PC, PS5, Switch', 699.00, 30, 'Relaxing space colony builder from a 3-person indie team. Build, trade, survive.', NULL, '2023-09-19');
+('Shadow Strike: Elite Ops', 'Action', 'PC, PS5, Xbox', 1499.00, 50, 'Tactical third-person shooter with co-op missions, stealth routes and explosive set pieces.', 'assets/img/shadow-strike.jpg', '2023-08-15'),
+('Elder Realms: Dragonfire', 'RPG', 'PC, PS5', 1999.00, 30, 'Open-world fantasy RPG with dragon taming, branching quests and 80+ hours of story.', 'assets/img/elder-realms.jpg', '2022-11-20'),
+('Turbo Velocity GP', 'Racing', 'PC, PS5, Xbox, Switch', 999.00, 20, 'Arcade racing with 40 tracks, split-screen multiplayer and full controller support.', 'assets/img/turbo-velocity.jpg', '2023-03-10'),
+('Pro League Football 25', 'Sports', 'PC, PS5, Xbox', 2499.00, 15, 'Realistic football sim with career mode, local clubs pack and online tournaments.', 'assets/img/pro-football.jpg', '2024-01-12'),
+('Iron Kingdoms: Siege', 'Strategy', 'PC', 1299.00, 40, 'Medieval real-time strategy with base building, sieges and ranked ladder.', 'assets/img/iron-kingdoms.jpg', '2021-09-05'),
+('Nightmare Hollow', 'Horror', 'PC, PS5, Xbox', 1199.00, 50, 'Survival horror in an abandoned hill station. Limited ammo, puzzles and multiple endings.', 'assets/img/nightmare-hollow.jpg', '2023-10-31'),
+('Pixel Harvest Tales', 'Indie', 'PC, Switch', 499.00, 10, 'Cozy farming sim with pixel art, festivals and 4-player co-op.', 'assets/img/pixel-harvest.jpg', '2022-05-18'),
+('Cyber Ronin 2077', 'Action', 'PC, PS5', 1799.00, 25, 'Neon samurai action with katana combat, hacking and a synthwave city to explore.', 'assets/img/cyber-ronin.jpg', '2023-06-22'),
+('Mystic Isles Odyssey', 'RPG', 'PC, Switch', 1599.00, 0, 'Story-rich island adventure with turn-based combat and monster companions.', 'assets/img/mystic-isles.jpg', '2024-02-14'),
+('Desert Rally Fury', 'Racing', 'PC, Xbox', 899.00, 60, 'Off-road rally racer across deserts with dune buggies, trucks and time trials.', 'assets/img/desert-rally.jpg', '2021-12-01'),
+('Galactic Commanders', 'Strategy', 'PC', 1399.00, 35, 'Sci-fi grand strategy. Command fleets, colonise planets and forge alliances.', 'assets/img/galactic-commanders.jpg', '2022-08-30'),
+('Cricket Champions League', 'Sports', 'PC, PS5, Xbox', 1899.00, 20, 'Cricket sim with T20 leagues, realistic physics and India home grounds.', 'assets/img/cricket-league.jpg', '2023-04-07'),
+('Echoes of the Deep', 'Horror', 'PC, Switch', 799.00, 0, 'Atmospheric underwater horror mystery with diving, sonar and light management.', 'assets/img/echoes-deep.jpg', '2024-05-25'),
+('Starforge Pioneers', 'Indie', 'PC, PS5, Switch', 699.00, 30, 'Relaxing space colony builder from a 3-person indie team. Build, trade, survive.', 'assets/img/starforge.jpg', '2023-09-19');
+
+-- ------------------------------------------------------------
+-- Top AAA hits with local cover art (assets/img/*.jpg, Steam CDN headers)
+-- ------------------------------------------------------------
+INSERT INTO games (title, genre, platform, price, discount_percent, description, image, release_date) VALUES
+('Grand Theft Auto V', 'Action', 'PC, PS5, Xbox', 1999.00, 50, 'Open-world crime saga across Los Santos. Heists, free roam and GTA Online with friends.', 'assets/img/gta-v.jpg', '2015-04-14'),
+('Palworld', 'Indie', 'PC, Xbox', 1099.00, 20, 'Survive, craft and catch Pals. Build bases, farm and battle in this viral open-world survival hit.', 'assets/img/palworld.jpg', '2024-01-19'),
+('Elden Ring', 'RPG', 'PC, PS5, Xbox', 3599.00, 30, 'FromSoftware open-world epic. Explore the Lands Between, conquer demigods and forge your legend.', 'assets/img/elden-ring.jpg', '2022-02-25'),
+('Red Dead Redemption 2', 'Action', 'PC, PS5, Xbox', 3199.00, 60, 'Arthur Morgan outlaw saga across the American frontier. Story, hunting and Red Dead Online.', 'assets/img/rdr2.jpg', '2019-12-05'),
+('God of War Ragnarok', 'Action', 'PC, PS5', 3999.00, 25, 'Kratos and Atreus face Norse gods. Cinematic combat, realms to explore and father-son story.', 'assets/img/gow-ragnarok.jpg', '2024-09-19'),
+('Baldur''s Gate 3', 'RPG', 'PC, PS5', 2999.00, 15, 'GOTY RPG. Deep choices, turn-based combat and co-op adventure in the Forgotten Realms.', 'assets/img/bg3.jpg', '2023-08-03'),
+('Cyberpunk 2077', 'RPG', 'PC, PS5, Xbox', 2999.00, 40, 'Night City open world as V. Guns, hacks, romance and the Phantom Liberty expansion.', 'assets/img/cyberpunk.jpg', '2020-12-10'),
+('Forza Horizon 5', 'Racing', 'PC, Xbox', 3999.00, 35, 'Mexico festival racer. 500+ cars, dynamic seasons and online convoys.', 'assets/img/forza-h5.jpg', '2021-11-09');
 
 -- Link every game to its category (genre name = category name).
 UPDATE games g JOIN categories c ON c.name = g.genre SET g.category_id = c.category_id;

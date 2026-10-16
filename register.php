@@ -35,12 +35,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !csrf_verify()) {
     // Trim text inputs (passwords are NOT trimmed).
     // is_string() guards: ?fullName[]=x sends an array, and trim(array)
     // is a fatal TypeError on PHP 8. Empty string => validation error.
-    $fullName = is_string($_POST['fullName'] ?? '') ? trim($_POST['fullName']) : '';
-    $email    = is_string($_POST['email'] ?? '')    ? trim($_POST['email'])    : '';
-    $mobile   = is_string($_POST['mobile'] ?? '')   ? trim($_POST['mobile'])   : '';
-    $username = is_string($_POST['username'] ?? '') ? trim($_POST['username']) : '';
-    $password = is_string($_POST['password'] ?? '') ? $_POST['password'] : '';
-    $confirm  = is_string($_POST['confirm'] ?? '')  ? $_POST['confirm']  : '';
+    // Single-read: the ?? in the check must not be re-read in the branch.
+    $in_fn = $_POST['fullName'] ?? '';
+    $in_em = $_POST['email'] ?? '';
+    $in_mo = $_POST['mobile'] ?? '';
+    $in_un = $_POST['username'] ?? '';
+    $in_pw = $_POST['password'] ?? '';
+    $in_cf = $_POST['confirm'] ?? '';
+    $fullName = is_string($in_fn) ? trim($in_fn) : '';
+    $email    = is_string($in_em) ? trim($in_em) : '';
+    $mobile   = is_string($in_mo) ? trim($in_mo) : '';
+    $username = is_string($in_un) ? trim($in_un) : '';
+    $password = is_string($in_pw) ? $in_pw : '';
+    $confirm  = is_string($in_cf) ? $in_cf : '';
 
     // ---- Server-side validation (mirrors js/validation.js) ----
     $error = '';

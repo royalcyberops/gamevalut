@@ -21,7 +21,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $message   = 'Security check failed. Please reload the page and try again.';
         $msg_class = 'msg-error';
     } else {
-        $action = is_string($_POST['action'] ?? '') ? $_POST['action'] : '';
+        $raw_action = $_POST['action'] ?? '';
+        $action = is_string($raw_action) ? $raw_action : '';
         // Single-read guards: re-reading $_POST['x'] in the true-branch after
         // a ?? check still warns when the key is missing (index.php add-forms
         // send no quantity), so read once into a temp first.

@@ -1493,6 +1493,30 @@ table tr:hover { background: rgba(0, 243, 255, 0.05); }
   transform: translateX(24px);
 }
 
+/* ---- 9. Checkout payment options ---- */
+.pay-option {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 12px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: border-color 0.25s ease, background 0.25s ease;
+}
+.pay-option + .pay-option { margin-top: 10px; }
+.pay-option:hover { border-color: rgba(0, 243, 255, 0.4); }
+.pay-option input { margin-top: 4px; accent-color: var(--accent); }
+.pay-option:has(input:checked) {
+  border-color: var(--accent);
+  background: rgba(0, 243, 255, 0.06);
+}
+.pay-disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+.pay-disabled:hover { border-color: rgba(255, 255, 255, 0.12); }
+
 /* ============================================================
    RESPONSIVE
    ============================================================ */

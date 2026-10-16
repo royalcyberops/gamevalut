@@ -38,8 +38,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !csrf_verify()) {
 } elseif ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // is_string() guards: ?loginId[]=x sends an array, and trim(array)
     // is a fatal TypeError on PHP 8. Empty string => validation error.
-    $loginId  = is_string($_POST['loginId'] ?? '')  ? trim($_POST['loginId'])  : '';
-    $password = is_string($_POST['password'] ?? '') ? $_POST['password'] : '';
+    $in_id  = $_POST['loginId'] ?? '';
+    $loginId  = is_string($in_id) ? trim($in_id) : '';
+    $raw_pass  = $_POST['password'] ?? '';
+    $password = is_string($raw_pass) ? $raw_pass : '';
 
     if ($loginId === '' || $password === '') {
         $message   = 'Please enter your username/email and password.';

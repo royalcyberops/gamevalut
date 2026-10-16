@@ -28,14 +28,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $message   = 'Security check failed. Please reload the page and try again.';
         $msg_class = 'msg-error';
     } else {
-        $form = is_string($_POST['form'] ?? '') ? $_POST['form'] : '';
+        $raw_form = $_POST['form'] ?? '';
+        $form = is_string($raw_form) ? $raw_form : '';
 
         if ($form === 'status') {
             // Update one order's status via the allowed transition map.
             // Single-read: the ?? in the check must not be re-read in the branch.
             $raw_oid = $_POST['order_id'] ?? 0;
             $order_id   = (is_numeric($raw_oid)) ? (int) $raw_oid : 0;
-            $new_status = is_string($_POST['new_status'] ?? '') ? $_POST['new_status'] : '';
+            $raw_status = $_POST['new_status'] ?? '';
+            $new_status = is_string($raw_status) ? $raw_status : '';
             if ($order_id <= 0 || !in_array($new_status, $valid_statuses, true)) {
                 $message   = 'Invalid order or status.';
                 $msg_class = 'msg-error';
@@ -71,15 +73,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         } elseif ($form === 'add_game') {
             // Add a catalogue game (genre comes from the chosen category — no duplication).
-            $title       = is_string($_POST['title'] ?? '') ? trim($_POST['title']) : '';
+            // Single-read guards (trim/is re-reads warn on missing keys).
+            $in_title = $_POST['title'] ?? '';
+            $in_plat  = $_POST['platform'] ?? '';
+            $in_price = $_POST['price'] ?? '';
+            $in_disc  = $_POST['discount'] ?? '';
+            $in_desc  = $_POST['description'] ?? '';
+            $in_img   = $_POST['image'] ?? '';
+            $title       = is_string($in_title) ? trim($in_title) : '';
             // Single-read guard (same ?? re-read warning as above).
             $raw_cat = $_POST['category_id'] ?? 0;
             $category_id = (is_numeric($raw_cat)) ? (int) $raw_cat : 0;
-            $platform    = is_string($_POST['platform'] ?? '') ? trim($_POST['platform']) : '';
-            $price_raw   = is_string($_POST['price'] ?? '') ? trim($_POST['price']) : '';
-            $disc_raw    = is_string($_POST['discount'] ?? '') ? trim($_POST['discount']) : '';
-            $description = is_string($_POST['description'] ?? '') ? trim($_POST['description']) : '';
-            $image       = is_string($_POST['image'] ?? '') ? trim($_POST['image']) : '';
+            $platform    = is_string($in_plat)  ? trim($in_plat)  : '';
+            $price_raw   = is_string($in_price) ? trim($in_price) : '';
+            $disc_raw    = is_string($in_disc)  ? trim($in_disc)  : '';
+            $description = is_string($in_desc)  ? trim($in_desc)  : '';
+            $image       = is_string($in_img)   ? trim($in_img)   : '';
 
             $price = is_numeric($price_raw) ? (float) $price_raw : -1;
             $disc  = is_numeric($disc_raw) ? (int) $disc_raw : -1;

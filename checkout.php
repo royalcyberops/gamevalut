@@ -78,12 +78,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $csrf_ok = csrf_verify();
 
     // is_string() guards: posted arrays would fatal trim() on PHP 8.
-    $f_name    = is_string($_POST['contact_name'] ?? '') ? trim($_POST['contact_name']) : '';
-    $f_phone   = is_string($_POST['contact_phone'] ?? '') ? trim($_POST['contact_phone']) : '';
-    $f_address = is_string($_POST['address'] ?? '') ? trim($_POST['address']) : '';
-    $f_date    = is_string($_POST['delivery_date'] ?? '') ? trim($_POST['delivery_date']) : '';
-    $f_time    = is_string($_POST['delivery_time'] ?? '') ? trim($_POST['delivery_time']) : '';
-    $f_notes   = is_string($_POST['notes'] ?? '') ? trim($_POST['notes']) : '';
+    // Single-read: trim($_POST['x']) in the true-branch warns on missing keys.
+    $in_name    = $_POST['contact_name'] ?? '';
+    $in_phone   = $_POST['contact_phone'] ?? '';
+    $in_address = $_POST['address'] ?? '';
+    $in_date    = $_POST['delivery_date'] ?? '';
+    $in_time    = $_POST['delivery_time'] ?? '';
+    $in_notes   = $_POST['notes'] ?? '';
+    $f_name    = is_string($in_name)    ? trim($in_name)    : '';
+    $f_phone   = is_string($in_phone)   ? trim($in_phone)   : '';
+    $f_address = is_string($in_address) ? trim($in_address) : '';
+    $f_date    = is_string($in_date)    ? trim($in_date)    : '';
+    $f_time    = is_string($in_time)    ? trim($in_time)    : '';
+    $f_notes   = is_string($in_notes)   ? trim($in_notes)   : '';
+    // Payment choice: COD live now, ONLINE reserved (coming soon).
+    // Single-read: the ?? in the check must not be re-read in the branch.
+    $pay_posted = $_POST['payment_method'] ?? '';
+    $f_pay_raw = is_string($pay_posted) ? $pay_posted : '';
 
     try {
         list($lines, $cart_total) = checkout_lines($conn, cart_get());
@@ -112,6 +123,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $error_msg = 'Please choose a valid delivery time (HH:MM).';
     } elseif (mb_strlen($f_notes) > 500) {
         $error_msg = 'Notes cannot exceed 500 characters.';
+    } elseif ($f_pay_raw !== '' && $f_pay_raw !== 'COD' && $f_pay_raw !== 'ONLINE') {
+        $error_msg = 'Please choose a valid payment method.';
+    } elseif ($f_pay_raw === 'ONLINE') {
+        // Online gateway not integrated yet — tell the user instead of failing silently.
+        $error_msg = 'Online payment is coming soon. Please choose Cash on Delivery for now.';
     } else {
         // All valid: place the order atomically (order + items or nothing).
         $db_time     = (strlen($f_time) === 5) ? $f_time . ':00' : $f_time;
@@ -223,6 +239,18 @@ require_once __DIR__ . '/includes/header.php';
       <div class="form-group form-group-full">
         <label for="notes">Notes <span class="label-optional">(optional, max 500 chars)</span></label>
         <textarea id="notes" name="notes" maxlength="500" rows="3" placeholder="Anything we should know?"><?php echo htmlspecialchars($f_notes); ?></textarea>
+      </div>
+
+      <div class="form-group form-group-full">
+        <span class="user-key">Payment method</span>
+        <label class="pay-option">
+          <input type="radio" name="payment_method" value="COD" checked>
+          <span><strong>Cash on Delivery</strong> — pay in cash when your games arrive.</span>
+        </label>
+        <label class="pay-option pay-disabled">
+          <input type="radio" name="payment_method" value="ONLINE" disabled>
+          <span><strong>Online Payment</strong> <span class="discount-badge">Coming soon</span></span>
+        </label>
       </div>
     </form>
   </div>

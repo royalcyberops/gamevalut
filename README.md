@@ -29,7 +29,7 @@ Browse games, add to cart, check out with Cash on Delivery (pay when the physica
 2. Checkout (`checkout.php`): contact + address + delivery slot, validated server-side
 3. Order saved atomically (`orders` + `order_items` in one transaction, totals from DB prices)
 4. Status lifecycle: `Pending` → `Confirmed` → `Delivered` (admin advances it), or `Cancelled` (customer while `Pending` / admin anytime)
-5. Payment: Cash on Delivery only — pay in cash when the physical game copies are delivered
+5. Payment: Cash on Delivery (pay when the physical copies arrive). Online payment — coming soon.
 
 ## Buttons
 - Green (`btn-green`) = add / create — Add to Cart, Add Game, Browse category

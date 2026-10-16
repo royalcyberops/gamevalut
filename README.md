@@ -2,7 +2,7 @@
 
 Steam-inspired game store demo (college mini-project) — PHP + MySQL, no frameworks.
 Sells PHYSICAL game copies (discs / boxed editions) delivered to your address — no digital downloads or keys.
-Browse games, add to cart, check out with Cash on Delivery (pay when the physical copies arrive), track orders. Admin manages orders and catalogue.
+Browse games, add to cart, check out with Card or UPI, track orders. Admin manages orders and catalogue.
 
 ## Run (XAMPP)
 1. Start Apache + MySQL
@@ -19,7 +19,7 @@ Browse games, add to cart, check out with Cash on Delivery (pay when the physica
 - `index.php` — Home / catalogue (Add to Cart)
 - `categories.php` — Browse by category
 - `cart.php` — Session cart (qty 1–5, server-side prices)
-- `checkout.php` — Delivery details + Cash on Delivery order
+- `checkout.php` — Delivery details + Card / UPI order
 - `dashboard.php` — My orders (cancel while Pending)
 - `admin.php` — Staff only: order statuses, revenue stats, add games
 - `register.php` / `login.php` / `logout.php` — Auth (bcrypt, CSRF, session hardening)
@@ -29,17 +29,17 @@ Browse games, add to cart, check out with Cash on Delivery (pay when the physica
 2. Checkout (`checkout.php`): contact + address + delivery slot, validated server-side
 3. Order saved atomically (`orders` + `order_items` in one transaction, totals from DB prices)
 4. Status lifecycle: `Pending` → `Confirmed` → `Delivered` (admin advances it), or `Cancelled` (customer while `Pending` / admin anytime)
-5. Payment: Cash on Delivery (pay when the physical copies arrive). Online payment — coming soon.
+5. Payment: Card or UPI (validated server-side, only the method is stored).
 
 ## Buttons
 - Green (`btn-green`) = add / create — Add to Cart, Add Game, Browse category
-- Warm amber (`btn-warm`) = primary shop flow — Browse games, Proceed to Checkout, Place Order (COD), Shop Games
+- Warm amber (`btn-warm`) = primary shop flow — Browse games, Proceed to Checkout, Pay & Place Order, Shop Games
 - Royal (`btn-royal`) = auth — Login, Register
 - Blue (`btn-blue`) = admin save — Save (order / game edits in `admin.php`)
 - Cancel outline (`btn-cancel`) = danger — Remove (cart line), Cancel (order)
 
 ## Tables (`gamevault_db`)
 - `users` (with `is_admin` flag), `categories`, `games`
-- `orders` (contact, address, delivery slot, COD, status, total)
+- `orders` (contact, address, delivery slot, CARD/UPI, status, total)
 - `order_items` (per-game qty + purchase-time unit price)
 - `bookings` (legacy reservation table, unused by the shop flow)

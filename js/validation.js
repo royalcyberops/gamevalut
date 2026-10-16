@@ -115,7 +115,23 @@ document.addEventListener('DOMContentLoaded', function () {
 
   /* ---------------- CHECKOUT form ---------------- */
   // VIVA: contactName letters min3, contactPhone mobile, address 10-300 chars,
-  // deliveryDate today..+60 days, deliveryTime non-empty. Mirrors checkout.php.
+  // deliveryDate today..+60 days, deliveryTime non-empty, payment CARD/UPI.
+  // Mirrors checkout.php.
+  function selectedPayment() {
+    var checked = document.querySelector('input[name="payment_method"]:checked');
+    return checked ? checked.value : 'CARD';
+  }
+
+  function togglePayFields() {
+    var method = selectedPayment();
+    var cardBox = document.getElementById('cardFields');
+    var upiBox = document.getElementById('upiFields');
+    if (cardBox) cardBox.hidden = (method === 'UPI');
+    if (upiBox) upiBox.hidden = (method !== 'UPI');
+    var summary = document.getElementById('paySummary');
+    if (summary) summary.textContent = (method === 'UPI') ? 'UPI' : 'Card';
+  }
+
   function validateCheckout() {
     var ok = true;
 
@@ -176,12 +192,62 @@ document.addEventListener('DOMContentLoaded', function () {
       } else if (notesErr) notesErr.textContent = '';
     }
 
+    // Payment: CARD requires 16-digit number, MM/YY future expiry, 3-4 digit
+    // CVV; UPI requires name@bank. Mirrors checkout.php (details are never stored).
+    var method = selectedPayment();
+    if (method !== 'CARD' && method !== 'UPI') {
+      showErr('payment', 'Choose Card or UPI.');
+      ok = false;
+    } else clearErr('payment');
+
+    if (method === 'CARD') {
+      var numEl = document.getElementById('cardNumber');
+      var digits = numEl ? numEl.value.replace(/[\s-]/g, '') : '';
+      if (!/^\d{16}$/.test(digits)) {
+        showErr('cardNumber', 'Enter a valid 16-digit card number.');
+        ok = false;
+      } else clearErr('cardNumber');
+
+      var expEl = document.getElementById('cardExpiry');
+      var exp = expEl ? expEl.value.trim() : '';
+      var m = exp.match(/^(0[1-9]|1[0-2])\/(\d{2}|\d{4})$/);
+      if (!m) {
+        showErr('cardExpiry', 'Enter expiry as MM/YY.');
+        ok = false;
+      } else {
+        var em = parseInt(m[1], 10);
+        var ey = parseInt(m[2], 10);
+        if (ey < 100) ey += 2000;
+        var now = new Date();
+        if (ey < now.getFullYear() || (ey === now.getFullYear() && em < (now.getMonth() + 1))) {
+          showErr('cardExpiry', 'Card expiry must be in the future.');
+          ok = false;
+        } else clearErr('cardExpiry');
+      }
+
+      var cvvEl = document.getElementById('cardCvv');
+      var cvv = cvvEl ? cvvEl.value.trim() : '';
+      if (!/^\d{3,4}$/.test(cvv)) {
+        showErr('cardCvv', 'Enter a valid 3-4 digit CVV.');
+        ok = false;
+      } else clearErr('cardCvv');
+    } else if (method === 'UPI') {
+      var upi = val('upiId');
+      if (!/^[a-zA-Z0-9._-]{2,50}@[a-zA-Z]{2,30}$/.test(upi)) {
+        showErr('upiId', 'Enter a valid UPI ID (e.g. name@okbank).');
+        ok = false;
+      } else clearErr('upiId');
+    }
+
     return ok;
   }
 
   var checkoutForm = document.getElementById('checkoutForm');
   if (checkoutForm) {
     checkoutForm.onsubmit = function () { return validateCheckout(); };
+    var payRadios = checkoutForm.querySelectorAll('input[name="payment_method"]');
+    payRadios.forEach(function (r) { r.addEventListener('change', togglePayFields); });
+    togglePayFields();
   }
 
   // NOTE: password show/hide (.toggle-pass) is handled in js/main.js

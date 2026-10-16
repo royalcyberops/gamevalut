@@ -9,7 +9,7 @@
     <div class="footer-col">
       <div class="logo footer-logo" style="margin-bottom:14px;"><span class="logo-mark">GV</span> <span class="logo-text">Game<strong>Vault</strong></span></div>
       <p class="footer-desc">An original college mini-project. A Steam-inspired game store demo with no affiliated branding.</p>
-      <p class="footer-desc"><span>Cash on Delivery</span> &bull; <span>60-day delivery slots</span> &bull; <span>Secure checkout</span></p>
+      <p class="footer-desc"><span>Card &amp; UPI payments</span> &bull; <span>60-day delivery slots</span> &bull; <span>Secure checkout</span></p>
     </div>
     <div class="footer-col">
       <h4>Store</h4>

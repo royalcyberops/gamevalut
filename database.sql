@@ -141,7 +141,7 @@ CREATE TABLE IF NOT EXISTS orders (
   delivery_date  DATE NOT NULL COMMENT 'preferred delivery date',
   delivery_time  TIME NOT NULL COMMENT 'preferred delivery time',
   notes          TEXT NULL,
-  payment_method VARCHAR(20) NOT NULL DEFAULT 'COD',
+  payment_method VARCHAR(20) NOT NULL DEFAULT 'CARD',
   order_status   ENUM('Pending','Confirmed','Delivered','Cancelled') NOT NULL DEFAULT 'Pending',
   total_amount   DECIMAL(10,2) NOT NULL,
   created_at     TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,

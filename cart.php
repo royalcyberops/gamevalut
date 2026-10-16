@@ -115,7 +115,7 @@ require_once __DIR__ . '/includes/header.php';
 ?>
 
 <h2 class="section-title">My Cart</h2>
-<p class="muted">Review your games, then check out with Cash on Delivery.</p>
+<p class="muted">Review your games, then check out with Card or UPI.</p>
 
 <?php if ($message !== ''): ?>
   <p class="<?php echo $msg_class; ?>"><?php echo htmlspecialchars($message); ?></p>
@@ -178,7 +178,7 @@ require_once __DIR__ . '/includes/header.php';
       <strong>&#8377;<?php echo number_format($cart_total, 2); ?></strong>
     </div>
     <a href="checkout.php" class="btn btn-warm btn-block">Proceed to Checkout</a>
-    <p class="summary-note">&#128274; Prices locked from the vault. Pay in cash on delivery.</p>
+    <p class="summary-note">&#128274; Prices locked from the vault. Pay securely by Card or UPI.</p>
   </aside>
 <?php endif; ?>
 

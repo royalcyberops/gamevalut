@@ -216,7 +216,6 @@ require_once __DIR__ . '/includes/header.php';
     <?php endif; ?>
   </div>
   <button id="prevBtn" class="carousel-btn prev" aria-label="Previous slide">&#10094;</button>
-  <button id="pauseBtn" class="pause-btn" aria-label="Pause autoplay">II</button>
   <button id="nextBtn" class="carousel-btn next" aria-label="Next slide">&#10095;</button>
   <div id="dots" class="dots"></div>
 </section>

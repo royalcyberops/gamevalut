@@ -1,5 +1,5 @@
 <?php
-// checkout.php — GameVault checkout (Cash on Delivery).
+// checkout.php — GameVault checkout (Card / UPI).
 // Requires login. Turns the session cart into an order + order_items rows
 // inside one transaction, then clears the cart. Totals are computed from
 // database prices — never from client-sent amounts.
@@ -36,6 +36,11 @@ $f_address = '';
 $f_date    = '';
 $f_time    = '';
 $f_notes   = '';
+$f_pay     = 'CARD';
+$f_card_number = '';
+$f_card_expiry = '';
+$f_card_cvv    = '';
+$f_upi         = '';
 $error_msg = '';
 
 $today   = date('Y-m-d');
@@ -91,10 +96,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $f_date    = is_string($in_date)    ? trim($in_date)    : '';
     $f_time    = is_string($in_time)    ? trim($in_time)    : '';
     $f_notes   = is_string($in_notes)   ? trim($in_notes)   : '';
-    // Payment choice: COD live now, ONLINE reserved (coming soon).
+    // Payment choice: CARD or UPI (COD removed).
     // Single-read: the ?? in the check must not be re-read in the branch.
     $pay_posted = $_POST['payment_method'] ?? '';
-    $f_pay_raw = is_string($pay_posted) ? $pay_posted : '';
+    $f_pay_raw = is_string($pay_posted) ? strtoupper(trim($pay_posted)) : '';
+    $f_pay = ($f_pay_raw === 'UPI') ? 'UPI' : 'CARD';
+    $in_card_number = $_POST['card_number'] ?? '';
+    $in_card_expiry = $_POST['card_expiry'] ?? '';
+    $in_card_cvv    = $_POST['card_cvv'] ?? '';
+    $in_upi         = $_POST['upi_id'] ?? '';
+    $f_card_number = is_string($in_card_number) ? trim($in_card_number) : '';
+    $f_card_expiry = is_string($in_card_expiry) ? trim($in_card_expiry) : '';
+    $f_card_cvv    = is_string($in_card_cvv) ? trim($in_card_cvv) : '';
+    $f_upi         = is_string($in_upi) ? trim($in_upi) : '';
+    // Normalise card number for validation (allow spaces/dashes in input).
+    $card_digits = preg_replace('/[\s-]/', '', $f_card_number);
 
     try {
         list($lines, $cart_total) = checkout_lines($conn, cart_get());
@@ -123,13 +139,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $error_msg = 'Please choose a valid delivery time (HH:MM).';
     } elseif (mb_strlen($f_notes) > 500) {
         $error_msg = 'Notes cannot exceed 500 characters.';
-    } elseif ($f_pay_raw !== '' && $f_pay_raw !== 'COD' && $f_pay_raw !== 'ONLINE') {
-        $error_msg = 'Please choose a valid payment method.';
-    } elseif ($f_pay_raw === 'ONLINE') {
-        // Online gateway not integrated yet — tell the user instead of failing silently.
-        $error_msg = 'Online payment is coming soon. Please choose Cash on Delivery for now.';
+    } elseif ($f_pay_raw !== 'CARD' && $f_pay_raw !== 'UPI') {
+        $error_msg = 'Please choose a payment method: Card or UPI.';
+    } elseif ($f_pay_raw === 'CARD' && !preg_match('/^\d{16}$/', $card_digits)) {
+        $error_msg = 'Enter a valid 16-digit card number.';
+    } elseif ($f_pay_raw === 'CARD' && !preg_match('/^(0[1-9]|1[0-2])\/(\d{2}|\d{4})$/', $f_card_expiry)) {
+        $error_msg = 'Enter card expiry as MM/YY.';
+    } elseif ($f_pay_raw === 'CARD' && !preg_match('/^\d{3,4}$/', $f_card_cvv)) {
+        $error_msg = 'Enter a valid 3-4 digit CVV.';
+    } elseif ($f_pay_raw === 'UPI' && !preg_match('/^[a-zA-Z0-9._-]{2,50}@[a-zA-Z]{2,30}$/', $f_upi)) {
+        $error_msg = 'Enter a valid UPI ID (e.g. name@okbank).';
     } else {
+        // Expiry must be in the future (CARD only).
+        if ($f_pay_raw === 'CARD') {
+            $exp_m = 0; $exp_y = 0;
+            if (preg_match('/^(0[1-9]|1[0-2])\/(\d{2}|\d{4})$/', $f_card_expiry, $m)) {
+                $exp_m = (int) $m[1];
+                $exp_y = (int) $m[2];
+                if ($exp_y < 100) { $exp_y += 2000; }
+            }
+            $cur_y = (int) date('Y'); $cur_m = (int) date('n');
+            if ($exp_y < $cur_y || ($exp_y === $cur_y && $exp_m < $cur_m)) {
+                $error_msg = 'Card expiry must be in the future.';
+            }
+        }
+    }
+    if ($error_msg === '') {
         // All valid: place the order atomically (order + items or nothing).
+        // Only payment_method is stored — card/UPI details are validated
+        // and never saved.
         $db_time     = (strlen($f_time) === 5) ? $f_time . ':00' : $f_time;
         $notes_param = ($f_notes === '') ? null : $f_notes;
         try {
@@ -138,10 +176,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 "INSERT INTO orders (user_id, contact_name, contact_phone, address,
                                      delivery_date, delivery_time, notes,
                                      payment_method, order_status, total_amount)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, 'COD', 'Pending', ?)"
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'Pending', ?)"
             );
             $stmt->execute([$user_id, $f_name, $f_phone, $f_address,
-                            $f_date, $db_time, $notes_param, $cart_total]);
+                            $f_date, $db_time, $notes_param, $f_pay_raw, $cart_total]);
             $order_id = (int) $conn->lastInsertId();
 
             $item = $conn->prepare(
@@ -180,7 +218,7 @@ require_once __DIR__ . '/includes/header.php';
 ?>
 
 <h2 class="section-title">Checkout</h2>
-<p class="muted">Cash on Delivery — pay when your games arrive.</p>
+<p class="muted">Secure checkout — pay by Card or UPI.</p>
 
 <?php if ($error_msg !== ''): ?>
   <p class="msg-error"><?php echo htmlspecialchars($error_msg); ?></p>
@@ -244,13 +282,44 @@ require_once __DIR__ . '/includes/header.php';
       <div class="form-group form-group-full">
         <span class="user-key">Payment method</span>
         <label class="pay-option">
-          <input type="radio" name="payment_method" value="COD" checked>
-          <span><strong>Cash on Delivery</strong> — pay in cash when your games arrive.</span>
+          <input type="radio" name="payment_method" value="CARD"<?php echo ($f_pay !== 'UPI') ? ' checked' : ''; ?>>
+          <span><strong>Card</strong> — credit / debit card.</span>
         </label>
-        <label class="pay-option pay-disabled">
-          <input type="radio" name="payment_method" value="ONLINE" disabled>
-          <span><strong>Online Payment</strong> <span class="discount-badge">Coming soon</span></span>
+        <label class="pay-option">
+          <input type="radio" name="payment_method" value="UPI"<?php echo ($f_pay === 'UPI') ? ' checked' : ''; ?>>
+          <span><strong>UPI</strong> — pay instantly with any UPI app.</span>
         </label>
+        <span class="err" id="err-payment"></span>
+      </div>
+
+      <div id="cardFields" class="form-grid"<?php echo ($f_pay === 'UPI') ? ' hidden' : ''; ?>>
+        <div class="form-group">
+          <label for="cardNumber">Card number</label>
+          <input type="text" id="cardNumber" name="card_number" inputmode="numeric" maxlength="19"
+                 value="<?php echo htmlspecialchars($f_card_number); ?>" placeholder="1234 5678 9012 3456">
+          <span class="err" id="err-cardNumber"></span>
+        </div>
+        <div class="form-group">
+          <label for="cardExpiry">Expiry (MM/YY)</label>
+          <input type="text" id="cardExpiry" name="card_expiry" maxlength="7"
+                 value="<?php echo htmlspecialchars($f_card_expiry); ?>" placeholder="MM/YY">
+          <span class="err" id="err-cardExpiry"></span>
+        </div>
+        <div class="form-group">
+          <label for="cardCvv">CVV</label>
+          <input type="password" id="cardCvv" name="card_cvv" inputmode="numeric" maxlength="4"
+                 value="" placeholder="3-4 digits" autocomplete="off">
+          <span class="err" id="err-cardCvv"></span>
+        </div>
+      </div>
+
+      <div id="upiFields" class="form-grid"<?php echo ($f_pay !== 'UPI') ? ' hidden' : ''; ?>>
+        <div class="form-group form-group-full">
+          <label for="upiId">UPI ID</label>
+          <input type="text" id="upiId" name="upi_id" maxlength="80"
+                 value="<?php echo htmlspecialchars($f_upi); ?>" placeholder="name@okbank">
+          <span class="err" id="err-upiId"></span>
+        </div>
       </div>
     </form>
   </div>
@@ -265,14 +334,14 @@ require_once __DIR__ . '/includes/header.php';
     <?php endforeach; ?>
     <div class="summary-row">
       <span>Payment</span>
-      <span>Cash on Delivery</span>
+      <span id="paySummary"><?php echo ($f_pay === 'UPI') ? 'UPI' : 'Card'; ?></span>
     </div>
     <div class="summary-total">
       <span>Total</span>
       <strong>&#8377;<?php echo number_format($cart_total, 2); ?></strong>
     </div>
 
-    <button type="submit" class="btn btn-warm btn-block" form="checkoutForm">Place Order (COD)</button>
+    <button type="submit" class="btn btn-warm btn-block" form="checkoutForm">Pay &amp; Place Order</button>
     <p class="summary-note">&#128274; Price locked from the vault. Status starts as <em>Pending</em>.</p>
   </aside>
 </div>

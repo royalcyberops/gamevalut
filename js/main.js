@@ -104,14 +104,13 @@ document.addEventListener('DOMContentLoaded', function () {
   /* ---------------------------------------------------------
    * 2. Hero carousel — .slides > .slide, #prevBtn/#nextBtn, #dots
    * Auto-slide 5s, pause on hover, wrap-around, touch swipe.
-   * #pauseBtn toggles autoplay; ArrowLeft/Right on hero region.
+   * ArrowLeft/Right on hero region.
    * --------------------------------------------------------- */
   var slidesWrap = document.querySelector('.slides');
   var slides = document.querySelectorAll('.slides > .slide');
   var prevBtn = document.getElementById('prevBtn');
   var nextBtn = document.getElementById('nextBtn');
   var dotsBox = document.getElementById('dots');
-  var pauseBtn = document.getElementById('pauseBtn');
 
   if (slidesWrap && slides.length > 0) {
     var current = 0;
@@ -134,7 +133,6 @@ document.addEventListener('DOMContentLoaded', function () {
         d.addEventListener('click', function () {
           showSlide(i);
           restartAuto();
-          syncPauseBtn();
         });
         dotsBox.appendChild(d);
       });
@@ -166,33 +164,16 @@ document.addEventListener('DOMContentLoaded', function () {
       if (!hovering && !paused) startAuto();
     }
 
-    function syncPauseBtn() {
-      if (!pauseBtn) return;
-      var isPaused = (timer === null);
-      pauseBtn.textContent = isPaused ? 'Play' : 'Pause';
-      pauseBtn.setAttribute('aria-pressed', isPaused ? 'true' : 'false');
-    }
-
     if (prevBtn) {
-      prevBtn.addEventListener('click', function () { showSlide(current - 1); restartAuto(); syncPauseBtn(); });
+      prevBtn.addEventListener('click', function () { showSlide(current - 1); restartAuto(); });
     }
     if (nextBtn) {
-      nextBtn.addEventListener('click', function () { showSlide(current + 1); restartAuto(); syncPauseBtn(); });
+      nextBtn.addEventListener('click', function () { showSlide(current + 1); restartAuto(); });
     }
 
     var hoverZone = slidesWrap.closest('.hero') || slidesWrap;
-    hoverZone.addEventListener('mouseenter', function () { hovering = true; stopAuto(); syncPauseBtn(); });
-    hoverZone.addEventListener('mouseleave', function () { hovering = false; restartAuto(); syncPauseBtn(); });
-
-    // Pause/play toggle button (if present). Pause is a control, always wired.
-    if (pauseBtn) {
-      pauseBtn.setAttribute('aria-pressed', paused ? 'true' : 'false');
-      pauseBtn.addEventListener('click', function () {
-        paused = !paused;
-        if (paused) stopAuto(); else restartAuto();
-        syncPauseBtn();
-      });
-    }
+    hoverZone.addEventListener('mouseenter', function () { hovering = true; stopAuto(); });
+    hoverZone.addEventListener('mouseleave', function () { hovering = false; restartAuto(); });
 
     // Keyboard: ArrowLeft/ArrowRight on the hero region.
     hoverZone.addEventListener('keydown', function (e) {
@@ -200,12 +181,10 @@ document.addEventListener('DOMContentLoaded', function () {
         e.preventDefault();
         showSlide(current - 1);
         restartAuto();
-        syncPauseBtn();
       } else if (e.key === 'ArrowRight') {
         e.preventDefault();
         showSlide(current + 1);
         restartAuto();
-        syncPauseBtn();
       }
     });
 
@@ -224,14 +203,12 @@ document.addEventListener('DOMContentLoaded', function () {
       if (Math.abs(diff) > 40) {
         if (diff > 0) showSlide(current + 1); else showSlide(current - 1);
         restartAuto();
-        syncPauseBtn();
       }
     }, { passive: true });
 
     buildDots();
     showSlide(0);
     if (!paused) startAuto();
-    syncPauseBtn();
   }
 
   /* ---------------------------------------------------------

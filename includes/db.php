@@ -23,5 +23,5 @@ try {
     // Never show raw SQL errors to visitors (viva point).
     // In a college project we show a friendly message.
     http_response_code(500);
-    die('Database connection failed. Please start MySQL in XAMPP and import database.sql.');
+    die('Database connection failed. Start MySQL in XAMPP, then run tools/setup.php once to create it: <a href="tools/setup.php">Open setup</a>.');
 }

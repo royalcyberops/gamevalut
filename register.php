@@ -190,5 +190,6 @@ require_once __DIR__ . '/includes/header.php';
   </div>
 </div>
 
-<script src="js/validation.js"></script>
+<?php $val_v = @filemtime(__DIR__ . '/js/validation.js') ?: time(); ?>
+<script src="js/validation.js?v=<?php echo (int)$val_v; ?>"></script>
 <?php require_once __DIR__ . '/includes/footer.php'; ?>

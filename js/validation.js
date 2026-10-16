@@ -1,5 +1,5 @@
 // js/validation.js — GameVault client-side form validation (vanilla JS).
-// Loaded AFTER js/main.js on pages with forms (register/login/booking).
+// Loaded AFTER js/main.js on pages with forms (register/login/checkout).
 // VIVA: JS validation is UX-only; PHP must re-validate everything
 // server-side because users can bypass JS. Returning false from
 // onsubmit blocks the form submit when data is invalid.
@@ -113,56 +113,20 @@ document.addEventListener('DOMContentLoaded', function () {
     loginForm.onsubmit = function () { return validateLogin(); };
   }
 
-  /* ---------------- BOOKING form ---------------- */
-  // VIVA: gameSelect non-empty, qty 1-5, bookingDate today..+60 days,
-  // bookingTime non-empty, contactName letters min3, contactPhone mobile.
-  function validateBooking() {
+  /* ---------------- CHECKOUT form ---------------- */
+  // VIVA: contactName letters min3, contactPhone mobile, address 10-300 chars,
+  // deliveryDate today..+60 days, deliveryTime non-empty. Mirrors checkout.php.
+  function validateCheckout() {
     var ok = true;
 
-    var gameSelect = document.getElementById('gameSelect');
-    var qtyEl = document.getElementById('qty');
-    var dateEl = document.getElementById('bookingDate');
-    var timeEl = document.getElementById('bookingTime');
-
-    var gameVal = gameSelect ? String(gameSelect.value).trim() : '';
-    var qty = qtyEl ? parseInt(qtyEl.value, 10) : NaN;
-    var dateStr = dateEl ? dateEl.value : '';
-    var timeStr = timeEl ? timeEl.value.trim() : '';
     var cName = val('contactName');
     var cPhone = val('contactPhone');
-
-    if (gameVal === '') {
-      showErr('gameSelect', 'Please choose a game.');
-      ok = false;
-    } else clearErr('gameSelect');
-
-    // qty must be an integer 1-5 (matches server rule).
-    if (isNaN(qty) || qty < 1 || qty > 5) {
-      showErr('qty', 'Quantity must be 1 to 5.');
-      ok = false;
-    } else clearErr('qty');
-
-    if (dateStr === '') {
-      showErr('bookingDate', 'Pick a date.');
-      ok = false;
-    } else {
-      // Compare date-only (strip time) to avoid timezone edge cases.
-      var picked = new Date(dateStr + 'T00:00:00');
-      var today = new Date(); today.setHours(0, 0, 0, 0);
-      var max = new Date(today); max.setDate(max.getDate() + 60);
-      if (isNaN(picked.getTime()) || picked < today) {
-        showErr('bookingDate', 'Date cannot be in the past.');
-        ok = false;
-      } else if (picked > max) {
-        showErr('bookingDate', 'Date must be within 60 days.');
-        ok = false;
-      } else clearErr('bookingDate');
-    }
-
-    if (timeStr === '') {
-      showErr('bookingTime', 'Pick a time slot.');
-      ok = false;
-    } else clearErr('bookingTime');
+    var addrEl = document.getElementById('address');
+    var addr = addrEl ? addrEl.value.trim() : '';
+    var dateEl = document.getElementById('deliveryDate');
+    var timeEl = document.getElementById('deliveryTime');
+    var dateStr = dateEl ? dateEl.value : '';
+    var timeStr = timeEl ? timeEl.value.trim() : '';
 
     if (!RE.name.test(cName)) {
       showErr('contactName', 'Enter contact name (letters, min 3).');
@@ -174,12 +138,38 @@ document.addEventListener('DOMContentLoaded', function () {
       ok = false;
     } else clearErr('contactPhone');
 
+    if (addr.length < 10 || addr.length > 300) {
+      showErr('address', 'Address must be 10-300 characters.');
+      ok = false;
+    } else clearErr('address');
+
+    if (dateStr === '') {
+      showErr('deliveryDate', 'Pick a delivery date.');
+      ok = false;
+    } else {
+      var picked = new Date(dateStr + 'T00:00:00');
+      var today = new Date(); today.setHours(0, 0, 0, 0);
+      var max = new Date(today); max.setDate(max.getDate() + 60);
+      if (isNaN(picked.getTime()) || picked < today) {
+        showErr('deliveryDate', 'Date cannot be in the past.');
+        ok = false;
+      } else if (picked > max) {
+        showErr('deliveryDate', 'Date must be within 60 days.');
+        ok = false;
+      } else clearErr('deliveryDate');
+    }
+
+    if (timeStr === '') {
+      showErr('deliveryTime', 'Pick a delivery time.');
+      ok = false;
+    } else clearErr('deliveryTime');
+
     return ok;
   }
 
-  var bookingForm = document.getElementById('bookingForm');
-  if (bookingForm) {
-    bookingForm.onsubmit = function () { return validateBooking(); };
+  var checkoutForm = document.getElementById('checkoutForm');
+  if (checkoutForm) {
+    checkoutForm.onsubmit = function () { return validateCheckout(); };
   }
 
   /* ---------------- Password show/hide toggle ---------------- */
@@ -204,5 +194,5 @@ document.addEventListener('DOMContentLoaded', function () {
   window.clearErr = clearErr;
   window.validateRegister = validateRegister;
   window.validateLogin = validateLogin;
-  window.validateBooking = validateBooking;
+  window.validateCheckout = validateCheckout;
 });

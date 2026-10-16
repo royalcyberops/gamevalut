@@ -1,6 +1,6 @@
 <?php
 // includes/auth.php
-// Session guard for protected pages (dashboard.php, booking.php).
+// Session guard for protected pages (dashboard.php, checkout.php).
 // Usage: require_once __DIR__ . '/auth.php';  (at the very top)
 //
 // Viva points:
@@ -57,7 +57,9 @@ $exists  = false;
 try {
     $stmt = $conn->prepare('SELECT user_id FROM users WHERE user_id = ?');
     $stmt->execute([$user_id]);
-    $exists = ($stmt->rowCount() > 0);
+    // fetch() check (not rowCount()): rowCount on SELECT is driver-dependent
+    // and can return 0 on unbuffered drivers even when rows exist.
+    $exists = ($stmt->fetch() !== false);
 } catch (PDOException $e) {
     // On any DB error, fail closed (treat as logged out) — never leak SQL.
     $exists = false;

@@ -24,14 +24,25 @@ document.addEventListener('DOMContentLoaded', function () {
     var container = ensureToastContainer();
     var toast = document.createElement('div');
     toast.className = 'toast ' + (type || 'info');
+    // Icons are a fixed internal map (safe for innerHTML); the message is
+    // user-influenced, so it is set via textContent (never innerHTML) to
+    // prevent XSS if a caller passes untrusted data.
     var iconMap = { success: '&#10004;', error: '&#10008;', info: '&#128172;' };
-    toast.innerHTML =
-      '<span class="toast-icon">' + (iconMap[type] || iconMap.info) + '</span>' +
-      '<span class="toast-body">' + message + '</span>' +
-      '<button class="toast-close" aria-label="Dismiss">&#215;</button>';
+    var icon = document.createElement('span');
+    icon.className = 'toast-icon';
+    icon.innerHTML = iconMap[type] || iconMap.info;
+    var body = document.createElement('span');
+    body.className = 'toast-body';
+    body.textContent = message;
+    var closeBtn = document.createElement('button');
+    closeBtn.className = 'toast-close';
+    closeBtn.setAttribute('aria-label', 'Dismiss');
+    closeBtn.innerHTML = '&#215;';
+    toast.appendChild(icon);
+    toast.appendChild(body);
+    toast.appendChild(closeBtn);
     container.appendChild(toast);
 
-    var closeBtn = toast.querySelector('.toast-close');
     closeBtn.addEventListener('click', function () {
       dismissToast(toast);
     });

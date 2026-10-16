@@ -51,7 +51,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !csrf_verify()) {
         $row = null;
         try {
             $stmt = $conn->prepare(
-                'SELECT user_id, username, full_name, password FROM users WHERE username = ? OR email = ? LIMIT 1'
+                'SELECT user_id, username, full_name, password, is_admin FROM users WHERE username = ? OR email = ? LIMIT 1'
             );
             $stmt->execute([$loginId, $loginId]);
             $row = $stmt->fetch() ?: null; // PDO fetch() returns false on no row
@@ -65,6 +65,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !csrf_verify()) {
             $_SESSION['user_id']  = (int) $row['user_id'];
             $_SESSION['username'] = $row['username'];
             $_SESSION['name']     = $row['full_name'];
+            $_SESSION['is_admin'] = (int) ($row['is_admin'] ?? 0);
             // Track absolute lifetime + idle timeout (enforced in includes/auth.php).
             $_SESSION['login_at']      = time();
             $_SESSION['last_activity'] = time();

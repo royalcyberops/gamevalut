@@ -179,7 +179,12 @@ require_once __DIR__ . '/includes/header.php';
                 <span class="new-price"><?php echo htmlspecialchars(inr($g['price'])); ?></span>
               <?php endif; ?>
             </div>
-            <a class="btn btn-green" href="booking.php?game_id=<?php echo $gid; ?>">Reserve</a>
+            <form method="post" action="cart.php" style="display:inline;">
+              <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrf_token()); ?>">
+              <input type="hidden" name="action" value="add">
+              <input type="hidden" name="game_id" value="<?php echo $gid; ?>">
+              <button type="submit" class="btn btn-green">Add to Cart</button>
+            </form>
           </div>
         </div>
       <?php endforeach; ?>
@@ -256,7 +261,12 @@ require_once __DIR__ . '/includes/header.php';
             <span class="new-price"><?php echo htmlspecialchars(inr($g['price'])); ?></span>
           <?php endif; ?>
         </div>
-        <a class="btn btn-green" href="booking.php?game_id=<?php echo $gid; ?>">Reserve</a>
+        <form method="post" action="cart.php" style="display:inline;">
+              <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrf_token()); ?>">
+              <input type="hidden" name="action" value="add">
+              <input type="hidden" name="game_id" value="<?php echo $gid; ?>">
+              <button type="submit" class="btn btn-green">Add to Cart</button>
+            </form>
       </div>
     </article>
   <?php endforeach; ?>
@@ -287,7 +297,12 @@ require_once __DIR__ . '/includes/header.php';
             <span class="new-price"><?php echo htmlspecialchars(inr($final)); ?></span>
             <span class="discount-badge">-<?php echo (int)$g['discount_percent']; ?>%</span>
           </div>
-          <a class="btn btn-green" href="booking.php?game_id=<?php echo $gid; ?>">Reserve</a>
+          <form method="post" action="cart.php" style="display:inline;">
+              <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrf_token()); ?>">
+              <input type="hidden" name="action" value="add">
+              <input type="hidden" name="game_id" value="<?php echo $gid; ?>">
+              <button type="submit" class="btn btn-green">Add to Cart</button>
+            </form>
         </div>
       </article>
     <?php endforeach; ?>

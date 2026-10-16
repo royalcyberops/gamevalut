@@ -18,7 +18,8 @@
     <div class="footer-col">
       <h4>Store</h4>
       <a href="index.php">Home</a>
-      <a href="booking.php">Reserve a Game</a>
+      <a href="categories.php">Categories</a>
+      <a href="cart.php">My Cart</a>
       <a href="dashboard.php">My Dashboard</a>
     </div>
     <div class="footer-col">

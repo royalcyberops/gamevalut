@@ -123,3 +123,38 @@ INSERT INTO games (title, genre, platform, price, discount_percent, description,
 
 -- Link every game to its category (genre name = category name).
 UPDATE games g JOIN categories c ON c.name = g.genre SET g.category_id = c.category_id;
+
+-- ------------------------------------------------------------
+-- Shop upgrade: admin flag + orders (see tools/migrate_shop.php,
+-- which applies the same changes idempotently to existing installs)
+-- ------------------------------------------------------------
+ALTER TABLE users ADD COLUMN IF NOT EXISTS is_admin TINYINT(1) NOT NULL DEFAULT 0 AFTER password;
+
+CREATE TABLE IF NOT EXISTS orders (
+  order_id       INT AUTO_INCREMENT PRIMARY KEY,
+  user_id        INT NOT NULL,
+  contact_name   VARCHAR(100) NOT NULL,
+  contact_phone  VARCHAR(10)  NOT NULL,
+  address        TEXT NOT NULL,
+  delivery_date  DATE NOT NULL COMMENT 'preferred delivery date',
+  delivery_time  TIME NOT NULL COMMENT 'preferred delivery time',
+  notes          TEXT NULL,
+  payment_method VARCHAR(20) NOT NULL DEFAULT 'COD',
+  order_status   ENUM('Pending','Confirmed','Delivered','Cancelled') NOT NULL DEFAULT 'Pending',
+  total_amount   DECIMAL(10,2) NOT NULL,
+  created_at     TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_orders_user FOREIGN KEY (user_id)
+    REFERENCES users (user_id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS order_items (
+  item_id    INT AUTO_INCREMENT PRIMARY KEY,
+  order_id   INT NOT NULL,
+  game_id    INT NOT NULL,
+  quantity   INT NOT NULL DEFAULT 1,
+  unit_price DECIMAL(10,2) NOT NULL COMMENT 'discounted unit price at purchase time',
+  CONSTRAINT fk_items_order FOREIGN KEY (order_id)
+    REFERENCES orders (order_id) ON DELETE CASCADE,
+  CONSTRAINT fk_items_game FOREIGN KEY (game_id)
+    REFERENCES games (game_id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

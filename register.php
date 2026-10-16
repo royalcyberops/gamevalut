@@ -19,6 +19,7 @@ require_once __DIR__ . '/includes/db.php'; // gives $conn (PDO)
 
 $message = '';   // HTML message shown above the form
 $msg_class = ''; // msg-success | msg-error
+$message_html = false; // true ONLY for our own hardcoded success link below
 
 // Preserve entered values so user does not re-type after an error.
 $fullName = '';
@@ -74,7 +75,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !csrf_verify()) {
         try {
             $stmt = $conn->prepare('SELECT user_id FROM users WHERE email = ? OR username = ?');
             $stmt->execute([$email, $username]);
-            $taken = ($stmt->rowCount() > 0);
+            // fetch() check (not rowCount()): rowCount on SELECT is
+            // driver-dependent and unreliable on unbuffered drivers.
+            $taken = ($stmt->fetch() !== false);
         } catch (PDOException $e) {
             $db_error = true; // fail closed, generic message below
         }
@@ -95,6 +98,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !csrf_verify()) {
                 $ins->execute([$fullName, $email, $mobile, $username, $hash]);
                 $message   = 'Registration successful! <a href="login.php">Login here</a>.';
                 $msg_class = 'msg-success';
+                $message_html = true; // safe: hardcoded link, no user input inside
                 // Clear preserved values after success.
                 $fullName = $email = $mobile = $username = '';
             } catch (PDOException $e) {
@@ -126,8 +130,12 @@ require_once __DIR__ . '/includes/header.php';
     <p class="auth-subtitle">Join GameVault to reserve games</p>
 
     <?php if ($message !== ''): ?>
-      <!-- Contains our own <a> link on success, so show as-is -->
+      <?php if ($message_html): ?>
+      <!-- Success link is our own hardcoded HTML (no user input), so show as-is -->
       <p class="<?php echo $msg_class; ?>"><?php echo $message; ?></p>
+      <?php else: ?>
+      <p class="<?php echo $msg_class; ?>"><?php echo htmlspecialchars($message); ?></p>
+      <?php endif; ?>
     <?php endif; ?>
 
     <form id="registerForm" method="post" action="register.php" onsubmit="return validateRegister()" novalidate>

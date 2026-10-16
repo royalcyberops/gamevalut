@@ -4,9 +4,12 @@
 // Starts the session if needed and decides links from $_SESSION.
 require_once __DIR__ . '/session.php'; // hardened bootstrap (the ONLY session_start)
 require_once __DIR__ . '/csrf.php';    // csrf_token() for the logout form
+require_once __DIR__ . '/cart.php';    // cart_count() for the nav badge
 $active_page = $active_page ?? basename($_SERVER['PHP_SELF'], '.php');
 $page_title  = $page_title ?? 'GameVault';
 $is_logged   = isset($_SESSION['user_id']);
+$is_admin    = $is_logged && (int) ($_SESSION['is_admin'] ?? 0) === 1;
+$cart_n      = cart_count();
 $hello_name  = $is_logged ? htmlspecialchars($_SESSION['username']) : '';
 ?>
 <!DOCTYPE html>
@@ -35,8 +38,11 @@ $hello_name  = $is_logged ? htmlspecialchars($_SESSION['username']) : '';
         <a href="register.php" class="<?php echo ($active_page === 'register') ? 'active' : ''; ?>">Register</a>
         <a href="login.php" class="<?php echo ($active_page === 'login') ? 'active' : ''; ?>">Login</a>
       <?php else: ?>
-        <a href="booking.php" class="<?php echo ($active_page === 'booking') ? 'active' : ''; ?>">Booking</a>
+        <a href="cart.php" class="<?php echo ($active_page === 'cart') ? 'active' : ''; ?>">Cart<?php echo ($cart_n > 0) ? ' (' . (int) $cart_n . ')' : ''; ?></a>
         <a href="dashboard.php" class="<?php echo ($active_page === 'dashboard') ? 'active' : ''; ?>">Dashboard</a>
+        <?php if ($is_admin): ?>
+          <a href="admin.php" class="<?php echo ($active_page === 'admin') ? 'active' : ''; ?>">Admin</a>
+        <?php endif; ?>
         <!-- Logout is state-changing: POST + CSRF token (a plain link would be CSRF-able). -->
         <form method="post" action="logout.php" style="display:inline;">
           <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrf_token()); ?>">

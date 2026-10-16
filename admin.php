@@ -15,6 +15,14 @@ $msg_class = '';
 // Whitelisted order statuses (never trust the posted value directly).
 $valid_statuses = ['Pending', 'Confirmed', 'Delivered', 'Cancelled'];
 
+// Allowed transitions: terminal states (Delivered, Cancelled) have no exits.
+$allowed_transitions = [
+    'Pending'   => ['Confirmed', 'Cancelled'],
+    'Confirmed' => ['Delivered', 'Cancelled'],
+    'Delivered' => [],
+    'Cancelled' => [],
+];
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!csrf_verify()) {
         $message   = 'Security check failed. Please reload the page and try again.';
@@ -23,7 +31,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $form = is_string($_POST['form'] ?? '') ? $_POST['form'] : '';
 
         if ($form === 'status') {
-            // Update one order's status (any user, any transition — admin decides).
+            // Update one order's status via the allowed transition map.
             // Single-read: the ?? in the check must not be re-read in the branch.
             $raw_oid = $_POST['order_id'] ?? 0;
             $order_id   = (is_numeric($raw_oid)) ? (int) $raw_oid : 0;
@@ -33,14 +41,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $msg_class = 'msg-error';
             } else {
                 try {
-                    $stmt = $conn->prepare('UPDATE orders SET order_status = ? WHERE order_id = ?');
-                    $stmt->execute([$new_status, $order_id]);
-                    if ($stmt->rowCount() > 0) {
-                        $message   = 'Order #' . $order_id . ' set to ' . $new_status . '.';
-                        $msg_class = 'msg-success';
-                    } else {
-                        $message   = 'Order #' . $order_id . ' not found or already ' . $new_status . '.';
+                    $cur = $conn->prepare('SELECT order_status FROM orders WHERE order_id = ?');
+                    $cur->execute([$order_id]);
+                    $cur_row = $cur->fetch();
+                    if (!$cur_row) {
+                        $message   = 'Order #' . $order_id . ' not found.';
                         $msg_class = 'msg-error';
+                    } elseif ($cur_row['order_status'] === $new_status) {
+                        $message   = 'Order #' . $order_id . ' is already ' . $new_status . '.';
+                        $msg_class = 'msg-error';
+                    } elseif (!in_array($new_status, $allowed_transitions[$cur_row['order_status']] ?? [], true)) {
+                        $message   = 'Invalid status change.';
+                        $msg_class = 'msg-error';
+                    } else {
+                        $stmt = $conn->prepare('UPDATE orders SET order_status = ? WHERE order_id = ?');
+                        $stmt->execute([$new_status, $order_id]);
+                        if ($stmt->rowCount() > 0) {
+                            $message   = 'Order #' . $order_id . ' set to ' . $new_status . '.';
+                            $msg_class = 'msg-success';
+                        } else {
+                            $message   = 'Order #' . $order_id . ' not found or already ' . $new_status . '.';
+                            $msg_class = 'msg-error';
+                        }
                     }
                 } catch (PDOException $e) {
                     $message   = 'Could not update the order. Please try again.';
@@ -70,8 +92,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $message = 'Platform is required (max 100 chars).';
             } elseif ($price <= 0) {
                 $message = 'Price must be greater than zero.';
+            } elseif ($price > 100000) {
+                $message = 'Price looks too high (max 100000).';
             } elseif ($disc < 0 || $disc > 100) {
                 $message = 'Discount must be 0-100.';
+            } elseif (mb_strlen($description) > 2000) {
+                $message = 'Description must be 2000 characters or fewer.';
             } elseif ($image !== '' && !preg_match('#^assets/img/[a-z0-9-]+\.(jpg|jpeg|png|webp|svg)$#i', $image)) {
                 $message = 'Image must be a local assets/img/ file.';
             } else {
@@ -82,6 +108,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $msg_class = 'msg-error';
             } else {
                 try {
+                    // Friendly duplicate-title guard (exact match; DB collation decides case).
+                    $dup = $conn->prepare('SELECT game_id FROM games WHERE title = ? LIMIT 1');
+                    $dup->execute([$title]);
+                    if ($dup->fetch()) {
+                        $message   = 'A game with this title already exists.';
+                        $msg_class = 'msg-error';
+                    } else {
                     // Genre display copy comes from the category row (single source of truth).
                     $cat = $conn->prepare('SELECT name FROM categories WHERE category_id = ?');
                     $cat->execute([$category_id]);
@@ -102,6 +135,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         ]);
                         $message   = 'Game "' . $title . '" added to the catalogue.';
                         $msg_class = 'msg-success';
+                    }
                     }
                 } catch (PDOException $e) {
                     $message   = 'Could not add the game. Please try again.';
@@ -259,7 +293,7 @@ require_once __DIR__ . '/includes/header.php';
       </div>
       <div class="form-group">
         <label for="gPrice">Price (&#8377;)</label>
-        <input type="number" id="gPrice" name="price" min="1" step="0.01" required>
+        <input type="number" id="gPrice" name="price" min="1" max="100000" step="0.01" required>
       </div>
       <div class="form-group">
         <label for="gDisc">Discount %</label>
@@ -272,7 +306,7 @@ require_once __DIR__ . '/includes/header.php';
     </div>
     <div class="form-group form-group-full">
       <label for="gDesc">Description</label>
-      <textarea id="gDesc" name="description" rows="3"></textarea>
+      <textarea id="gDesc" name="description" rows="3" maxlength="2000"></textarea>
     </div>
     <button type="submit" class="btn btn-green">Add Game</button>
   </form>

@@ -2,14 +2,17 @@
 // tools/setup.php — One-click GameVault database installer.
 // Open http://localhost/steam/tools/setup.php in the browser.
 // It creates `gamevault_db`, builds all tables and seeds the 22 games.
-// Safe to re-run: if data already exists it stops (unless ?force=1 wipes + rebuilds).
+// Safe to re-run: if data already exists it stops. Wipe + rebuild requires
+// the POST confirm form below — GET never wipes (no ?force=1 link).
 
 $DB_HOST = 'localhost';
 $DB_USER = 'root';
 $DB_PASS = '';
 $DB_NAME = 'gamevault_db';
 
-$force = isset($_GET['force']) && $_GET['force'] === '1';
+// Wipe only via explicit POST confirmation — GET must NEVER wipe data.
+$force = ($_SERVER['REQUEST_METHOD'] === 'POST'
+    && isset($_POST['wipe']) && $_POST['wipe'] === 'yes');
 $log = [];
 
 function out($msg) {
@@ -29,6 +32,8 @@ header('Content-Type: text/html; charset=UTF-8');
   h1 { color: #00f3ff; } a { color: #00f3ff; }
   .ok { color: #00ff88; } .err { color: #ff5e5e; }
   .btn { display: inline-block; margin-top: 12px; padding: 11px 22px; border-radius: 8px; background: #00ff88; color: #0b0d14; font-weight: 800; text-decoration: none; }
+  .btn-danger { background: transparent; border: 1px solid #ff5e5e; color: #ff5e5e; cursor: pointer; font-weight: 800; }
+  .wipe { margin-top: 18px; border-top: 1px solid #ffffff22; padding-top: 14px; font-size: .85rem; }
 </style>
 </head>
 <body>
@@ -45,10 +50,15 @@ try {
     );
     out('Connected to MySQL.');
 
-    // 2. Fresh rebuild requested? Drop everything first.
+    if (isset($_GET['force'])) {
+        out('Note: ?force=1 via GET is disabled — use the wipe checkbox form. Nothing was wiped.');
+    }
+
+    // 2. Fresh rebuild requested via POST confirm form? Drop everything first.
+    // NOTE: $_GET['force'] is deliberately ignored — GET must never wipe.
     if ($force) {
         $pdo->exec("DROP DATABASE IF EXISTS `$DB_NAME`");
-        out('Old database dropped (?force=1).');
+        out('Old database dropped (POST-confirmed wipe).');
     }
 
     // 3. Already installed? Stop unless forced (re-running the seed INSERTs would duplicate games).
@@ -58,7 +68,10 @@ try {
         if ($count > 0 && !$force) {
             echo '<p class="ok"><strong>Already installed:</strong> ' . $count . ' games found. Nothing changed.</p>';
             echo '<a class="btn" href="../index.php">Open GameVault</a>';
-            echo '<p style="margin-top:14px;font-size:.85rem">To wipe and rebuild from scratch: <a href="?force=1">setup.php?force=1</a></p>';
+            echo '<form class="wipe" method="post" onsubmit="return confirm(\'Wipe ALL GameVault data and rebuild from scratch?\');">';
+            echo '<label><input type="checkbox" name="wipe" value="yes" required> I understand this wipes all data</label><br>';
+            echo '<button class="btn btn-danger" type="submit">Wipe + Rebuild</button>';
+            echo '</form>';
             echo '</main></body></html>';
             exit;
         }
@@ -73,6 +86,8 @@ try {
     }
     $sql = file_get_contents($sqlFile);
     // Strip full-line comments (-- ...) and (# ...) so splitting on ";" is safe.
+    // Note: this naive explode(';') splitter is fine until procedures/triggers
+    // are added (no stored routines / BEGIN...END / DELIMITER bodies yet).
     $lines = explode("\n", $sql);
     $clean = [];
     foreach ($lines as $ln) {

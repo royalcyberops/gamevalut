@@ -50,10 +50,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         } elseif ($action === 'update' && $game_id > 0) {
             cart_set_qty($game_id, $qty);
+            if ($qty <= 0) {
+                $message   = 'Removed from cart.';
+            } else {
+                $message   = 'Cart updated.';
+            }
+            $msg_class = 'msg-success';
         } elseif ($action === 'remove' && $game_id > 0) {
             cart_remove($game_id);
+            $message   = 'Removed from cart.';
+            $msg_class = 'msg-success';
         } elseif ($action === 'clear') {
             cart_clear();
+            $message   = 'Cart cleared.';
+            $msg_class = 'msg-success';
         }
     }
 }
@@ -70,6 +80,7 @@ if (!empty($cart)) {
             "SELECT game_id, title, image, price, discount_percent FROM games WHERE game_id IN ($ph)"
         );
         $stmt->execute($ids);
+        $found_ids = [];
         while ($g = $stmt->fetch()) {
             $gid  = (int) $g['game_id'];
             $qty  = max(1, min(5, (int) ($cart[$gid] ?? 1)));
@@ -86,7 +97,11 @@ if (!empty($cart)) {
                 'line_total' => round($unit * $qty, 2),
             ];
             $cart_total += $unit * $qty;
+            $found_ids[] = $gid;
         }
+        // Prune ghost ids (in session but missing from games) so nav
+        // count, rendered rows, and totals always agree.
+        cart_prune($found_ids);
         $cart_total = round($cart_total, 2);
     } catch (PDOException $e) {
         $lines = [];
@@ -133,7 +148,7 @@ require_once __DIR__ . '/includes/header.php';
               <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrf_token()); ?>">
               <input type="hidden" name="action" value="update">
               <input type="hidden" name="game_id" value="<?php echo (int) $l['game_id']; ?>">
-              <input type="number" name="quantity" min="0" max="5" step="1" value="<?php echo (int) $l['qty']; ?>" style="width:64px;" onchange="this.form.submit()">
+              <input type="number" name="quantity" min="1" max="5" step="1" value="<?php echo (int) $l['qty']; ?>" style="width:64px;" onchange="this.form.submit()">
             </form>
           </td>
           <td class="td-amount">&#8377;<?php echo number_format($l['line_total'], 2); ?></td>
@@ -155,7 +170,7 @@ require_once __DIR__ . '/includes/header.php';
     <h3 class="summary-title">Order Summary</h3>
     <div class="summary-row">
       <span>Items</span>
-      <span><?php echo (int) cart_count(); ?></span>
+      <span><?php echo (int) array_sum(array_column($lines, 'qty')); ?></span>
     </div>
     <div class="summary-total">
       <span>Total</span>

@@ -44,7 +44,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !csrf_verify()) {
 
     // ---- Server-side validation (mirrors js/validation.js) ----
     $error = '';
-    if (!preg_match('/^[A-Za-z ]{3,}$/', $fullName)) {
+    if (!preg_match('/^[A-Za-z ]{3,100}$/', $fullName)) {
         $error = 'Full name must contain only letters/spaces, minimum 3 characters.';
     } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $error = 'Please enter a valid email address.';
@@ -142,7 +142,7 @@ require_once __DIR__ . '/includes/header.php';
       <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrf_token()); ?>">
       <div class="form-group">
         <label for="fullName">Full Name</label>
-        <input type="text" id="fullName" name="fullName" placeholder="e.g. Aarav Sharma" value="<?php echo htmlspecialchars($fullName); ?>" autocomplete="name" required>
+        <input type="text" id="fullName" name="fullName" maxlength="100" placeholder="e.g. Aarav Sharma" value="<?php echo htmlspecialchars($fullName); ?>" autocomplete="name" required>
         <span class="err" id="err-fullName"></span>
       </div>
 

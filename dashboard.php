@@ -27,17 +27,26 @@ if (isset($_GET['msg'])) {
     } elseif ($_GET['msg'] === 'forbidden') {
         $message   = 'Staff only — you do not have admin access.';
         $msg_class = 'msg-error';
+    } elseif ($_GET['msg'] === 'cancelled_ok') {
+        $message   = 'Order cancelled.';
+        $msg_class = 'msg-success';
+    } elseif ($_GET['msg'] === 'cancel_failed') {
+        $message   = 'Cannot cancel this order (already confirmed/delivered/cancelled).';
+        $msg_class = 'msg-error';
     }
 }
 
 // ---- Handle order cancellation (POST from Cancel button) ----
+// PRG: redirect after POST so refresh cannot double-submit.
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['cancel_id'])) {
     if (!csrf_verify()) {
         // CSRF check failed — reject before touching the database.
-        $message   = 'Security check failed. Please reload the page and try again.';
-        $msg_class = 'msg-error';
+        header('Location: dashboard.php?msg=cancel_failed');
+        exit;
     } else {
-        $cancel_id = (int) $_POST['cancel_id'];
+        // Single-read guard, matching cart.php style.
+        $raw_cancel = $_POST['cancel_id'] ?? 0;
+        $cancel_id = (is_numeric($raw_cancel)) ? (int) $raw_cancel : 0;
         // Only the owner can cancel, and only while the order is still Pending.
         try {
             $stmt = $conn->prepare(
@@ -46,15 +55,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['cancel_id'])) {
             );
             $stmt->execute([$cancel_id, $user_id]);
             if ($stmt->rowCount() > 0) {
-                $message   = 'Order #' . $cancel_id . ' cancelled.';
-                $msg_class = 'msg-success';
+                header('Location: dashboard.php?msg=cancelled_ok');
+                exit;
             } else {
-                $message   = 'Cannot cancel this order (already confirmed/delivered/cancelled).';
-                $msg_class = 'msg-error';
+                header('Location: dashboard.php?msg=cancel_failed');
+                exit;
             }
         } catch (PDOException $e) {
-            $message   = 'Could not cancel your order. Please try again.';
-            $msg_class = 'msg-error';
+            header('Location: dashboard.php?msg=cancel_failed');
+            exit;
         }
     }
 }
@@ -100,7 +109,7 @@ try {
     }
 }
 
-// ---- Stats: total orders + total spent (excluding Cancelled) ----
+// ---- Stats: total orders + total order value (excluding Cancelled) ----
 $total_orders = count($orders);
 $total_spent  = 0.00;
 foreach ($orders as $b) {
@@ -145,7 +154,7 @@ require_once __DIR__ . '/includes/header.php';
   <div class="stat-box warm">
     <span class="stat-icon">&#128176;</span>
     <p class="stat-num">&#8377;<?php echo number_format($total_spent, 2); ?></p>
-    <p class="stat-label">Total Spent</p>
+    <p class="stat-label">Order Value</p>
   </div>
   <div class="stat-box warm">
     <span class="stat-icon">&#9203;</span>

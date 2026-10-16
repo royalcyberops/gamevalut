@@ -14,7 +14,10 @@ try {
     $stmt = $conn->prepare('SELECT is_admin FROM users WHERE user_id = ?');
     $stmt->execute([(int) $_SESSION['user_id']]);
     $row = $stmt->fetch();
-    if (!$row || (int) $row['is_admin'] !== 1) {
+    // Sync session flag to the live DB value first, so a demoted admin
+    // loses the nav link state on next hit instead of keeping a stale flag.
+    $_SESSION['is_admin'] = $row ? (int) ($row['is_admin'] ?? 0) : 0;
+    if (!$row || $_SESSION['is_admin'] !== 1) {
         header('Location: dashboard.php?msg=forbidden');
         exit;
     }

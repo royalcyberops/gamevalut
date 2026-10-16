@@ -73,6 +73,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !csrf_verify()) {
             exit;
         }
         // Generic failure message either way (user not found or wrong password).
+        // sleep(1): cheap brute-force backoff for a local demo (success path untouched).
+        sleep(1);
         $message   = 'Invalid username or password.';
         $msg_class = 'msg-error';
     }

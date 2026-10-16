@@ -126,9 +126,11 @@ UPDATE games g JOIN categories c ON c.name = g.genre SET g.category_id = c.categ
 
 -- ------------------------------------------------------------
 -- Shop upgrade: admin flag + orders (see tools/migrate_shop.php,
--- which applies the same changes idempotently to existing installs)
--- ------------------------------------------------------------
-ALTER TABLE users ADD COLUMN IF NOT EXISTS is_admin TINYINT(1) NOT NULL DEFAULT 0 AFTER password;
+-- which applies the same changes idempotently to existing installs).
+-- Plain ADD COLUMN (no IF NOT EXISTS) for MySQL 8 + MariaDB compat:
+-- setup.php early-exits on existing installs, migrate_shop.php checks
+-- SHOW COLUMNS first, so this only runs on fresh imports.
+ALTER TABLE users ADD COLUMN is_admin TINYINT(1) NOT NULL DEFAULT 0 AFTER password;
 
 CREATE TABLE IF NOT EXISTS orders (
   order_id       INT AUTO_INCREMENT PRIMARY KEY,
@@ -156,5 +158,5 @@ CREATE TABLE IF NOT EXISTS order_items (
   CONSTRAINT fk_items_order FOREIGN KEY (order_id)
     REFERENCES orders (order_id) ON DELETE CASCADE,
   CONSTRAINT fk_items_game FOREIGN KEY (game_id)
-    REFERENCES games (game_id) ON DELETE CASCADE
+    REFERENCES games (game_id) ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

@@ -32,7 +32,7 @@ require_once __DIR__ . '/includes/header.php';
 ?>
 
 <h2 class="section-title reveal">Game Categories</h2>
-<p class="muted reveal">Seven royal vaults — pick one to filter the store.</p>
+<p class="muted reveal"><?php echo (int)count($categories); ?> vault<?php echo (count($categories) === 1) ? '' : 's'; ?> &mdash; pick one to filter the store.</p>
 
 <?php if ($db_error !== ''): ?>
   <p class="msg-error"><?php echo htmlspecialchars($db_error); ?></p>

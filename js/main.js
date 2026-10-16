@@ -104,18 +104,24 @@ document.addEventListener('DOMContentLoaded', function () {
   /* ---------------------------------------------------------
    * 2. Hero carousel — .slides > .slide, #prevBtn/#nextBtn, #dots
    * Auto-slide 5s, pause on hover, wrap-around, touch swipe.
+   * #pauseBtn toggles autoplay; ArrowLeft/Right on hero region.
    * --------------------------------------------------------- */
   var slidesWrap = document.querySelector('.slides');
   var slides = document.querySelectorAll('.slides > .slide');
   var prevBtn = document.getElementById('prevBtn');
   var nextBtn = document.getElementById('nextBtn');
   var dotsBox = document.getElementById('dots');
+  var pauseBtn = document.getElementById('pauseBtn');
 
   if (slidesWrap && slides.length > 0) {
     var current = 0;
     var timer = null;
     var DELAY = 5000;
     var hovering = false;
+    var paused = false;
+    var reduceMotionCarousel = window.matchMedia &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduceMotionCarousel) paused = true;
 
     function buildDots() {
       if (!dotsBox) return;
@@ -128,6 +134,7 @@ document.addEventListener('DOMContentLoaded', function () {
         d.addEventListener('click', function () {
           showSlide(i);
           restartAuto();
+          syncPauseBtn();
         });
         dotsBox.appendChild(d);
       });
@@ -156,19 +163,51 @@ document.addEventListener('DOMContentLoaded', function () {
     }
     function restartAuto() {
       stopAuto();
-      if (!hovering) startAuto();
+      if (!hovering && !paused) startAuto();
+    }
+
+    function syncPauseBtn() {
+      if (!pauseBtn) return;
+      var isPaused = (timer === null);
+      pauseBtn.textContent = isPaused ? 'Play' : 'Pause';
+      pauseBtn.setAttribute('aria-pressed', isPaused ? 'true' : 'false');
     }
 
     if (prevBtn) {
-      prevBtn.addEventListener('click', function () { showSlide(current - 1); restartAuto(); });
+      prevBtn.addEventListener('click', function () { showSlide(current - 1); restartAuto(); syncPauseBtn(); });
     }
     if (nextBtn) {
-      nextBtn.addEventListener('click', function () { showSlide(current + 1); restartAuto(); });
+      nextBtn.addEventListener('click', function () { showSlide(current + 1); restartAuto(); syncPauseBtn(); });
     }
 
     var hoverZone = slidesWrap.closest('.hero') || slidesWrap;
-    hoverZone.addEventListener('mouseenter', function () { hovering = true; stopAuto(); });
-    hoverZone.addEventListener('mouseleave', function () { hovering = false; restartAuto(); });
+    hoverZone.addEventListener('mouseenter', function () { hovering = true; stopAuto(); syncPauseBtn(); });
+    hoverZone.addEventListener('mouseleave', function () { hovering = false; restartAuto(); syncPauseBtn(); });
+
+    // Pause/play toggle button (if present). Pause is a control, always wired.
+    if (pauseBtn) {
+      pauseBtn.setAttribute('aria-pressed', paused ? 'true' : 'false');
+      pauseBtn.addEventListener('click', function () {
+        paused = !paused;
+        if (paused) stopAuto(); else restartAuto();
+        syncPauseBtn();
+      });
+    }
+
+    // Keyboard: ArrowLeft/ArrowRight on the hero region.
+    hoverZone.addEventListener('keydown', function (e) {
+      if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        showSlide(current - 1);
+        restartAuto();
+        syncPauseBtn();
+      } else if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        showSlide(current + 1);
+        restartAuto();
+        syncPauseBtn();
+      }
+    });
 
     // Touch swipe support.
     var startX = 0, isDown = false;
@@ -185,19 +224,55 @@ document.addEventListener('DOMContentLoaded', function () {
       if (Math.abs(diff) > 40) {
         if (diff > 0) showSlide(current + 1); else showSlide(current - 1);
         restartAuto();
+        syncPauseBtn();
       }
     }, { passive: true });
 
     buildDots();
     showSlide(0);
-    startAuto();
+    if (!paused) startAuto();
+    syncPauseBtn();
   }
 
   /* ---------------------------------------------------------
    * 3. Genre filter — .chip[data-genre] filters .game-card[data-genre]
+   * Per-grid empty states: toggles .empty-note[data-empty] and
+   * hides the orphaned h2.section-title when its grid is empty.
    * --------------------------------------------------------- */
   var chips = document.querySelectorAll('.chip[data-genre]');
   var cards = document.querySelectorAll('.game-card[data-genre]');
+
+  // Count visible cards in a grid; toggle its note + header. All guarded.
+  function updateGridEmptyState(gridId, emptyKey) {
+    var grid = document.getElementById(gridId);
+    if (!grid) return;
+    var gridCards = grid.querySelectorAll('.game-card');
+    if (gridCards.length === 0) return;
+    var visible = 0;
+    gridCards.forEach(function (card) {
+      if (card.style.display !== 'none') visible++;
+    });
+    var note = document.querySelector('.empty-note[data-empty="' + emptyKey + '"]');
+    if (note) note.hidden = (visible !== 0);
+    // Nearest preceding h2.section-title (walk previous siblings).
+    var header = null;
+    var sib = grid.previousElementSibling;
+    while (sib) {
+      if (sib.matches && sib.matches('h2.section-title')) { header = sib; break; }
+      if (sib.querySelector) {
+        var inner = sib.querySelector('h2.section-title');
+        if (inner) { header = inner; break; }
+      }
+      sib = sib.previousElementSibling;
+    }
+    if (header) header.style.display = (visible === 0) ? 'none' : '';
+  }
+
+  function updateEmptyStates() {
+    updateGridEmptyState('featuredGrid', 'featured');
+    updateGridEmptyState('offersGrid', 'offers');
+  }
+
   if (chips.length > 0 && cards.length > 0) {
     chips.forEach(function (chip) {
       chip.addEventListener('click', function () {
@@ -214,55 +289,14 @@ document.addEventListener('DOMContentLoaded', function () {
           // Reveal re-trigger for filtered cards
           if (show) card.classList.remove('reveal');
         });
+        updateEmptyStates();
       });
     });
+    updateEmptyStates();
   }
 
   /* ---------------------------------------------------------
-   * 4. Booking live preview — #gameSelect, #qty, #totalPreview
-   * --------------------------------------------------------- */
-  var gameSelect = document.getElementById('gameSelect');
-  var qtyInput = document.getElementById('qty');
-  var totalPreview = document.getElementById('totalPreview');
-  var pricePreview = document.getElementById('pricePreview');
-  var qtyPreview = document.getElementById('qtyPreview');
-
-  if (gameSelect && qtyInput && totalPreview) {
-    function inr(n) {
-      return '₹' + Number(n).toLocaleString('en-IN', {
-        minimumFractionDigits: 2, maximumFractionDigits: 2
-      });
-    }
-    function updatePreview() {
-      var opt = gameSelect.options[gameSelect.selectedIndex];
-      var price = opt ? parseFloat(opt.getAttribute('data-price')) || 0 : 0;
-      var disc = opt ? parseFloat(opt.getAttribute('data-discount')) || 0 : 0;
-      var qty = parseInt(qtyInput.value, 10);
-      if (isNaN(qty)) qty = 0;
-      if (qty < 0) qty = 0;
-      if (qty > 5) qty = 5;
-
-      var discounted = price * (1 - disc / 100);
-      var total = discounted * qty;
-
-      if (pricePreview) {
-        pricePreview.textContent = opt && opt.value
-          ? inr(discounted) + (disc > 0 ? '  (-' + disc + '%)' : '')
-          : '—';
-      }
-      if (qtyPreview) {
-        qtyPreview.textContent = String(qty);
-      }
-      totalPreview.textContent = opt && opt.value ? inr(total) : '—';
-    }
-    gameSelect.addEventListener('change', updatePreview);
-    qtyInput.addEventListener('input', updatePreview);
-    qtyInput.addEventListener('change', updatePreview);
-    updatePreview();
-  }
-
-  /* ---------------------------------------------------------
-   * 5. Stagger grid entrances — children of card grids reveal one
+   * 4. Stagger grid entrances — children of card grids reveal one
    *    after another via --d (consumed by .reveal in style.css).
    *    Must run BEFORE the reveal observer below observes them.
    * --------------------------------------------------------- */
@@ -274,7 +308,7 @@ document.addEventListener('DOMContentLoaded', function () {
   });
 
   /* ---------------------------------------------------------
-   * 6. Scroll reveal — elements with .reveal fade in on scroll
+   * 5. Scroll reveal — elements with .reveal fade in on scroll
    * --------------------------------------------------------- */
   var revealEls = document.querySelectorAll('.reveal');
   if (revealEls.length > 0) {
@@ -290,7 +324,7 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   /* ---------------------------------------------------------
-   * 7. Password show/hide toggle (data-target)
+   * 6. Password show/hide toggle (data-target)
    * --------------------------------------------------------- */
   var toggles = document.querySelectorAll('.toggle-pass[data-target]');
   toggles.forEach(function (btn) {
@@ -305,7 +339,7 @@ document.addEventListener('DOMContentLoaded', function () {
   });
 
   /* ---------------------------------------------------------
-   * 8. Back to top button — shows after 300px scroll,
+   * 7. Back to top button — shows after 300px scroll,
    *    smooth scroll to top on click.
    * --------------------------------------------------------- */
   var backToTop = document.getElementById('backToTop');
@@ -331,7 +365,7 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   /* ---------------------------------------------------------
-   * 9. Stat count-up — .stat-num counts from 0 on first view.
+   * 8. Stat count-up — .stat-num counts from 0 on first view.
    *    Parses prefix (₹), number (commas/decimals preserved),
    *    suffix. Reduced-motion users get the final value instantly.
    * --------------------------------------------------------- */
@@ -376,7 +410,7 @@ document.addEventListener('DOMContentLoaded', function () {
   });
 
   /* ---------------------------------------------------------
-   * 10. Cart badge pulse — after "Added to cart", the nav Cart
+   * 9. Cart badge pulse — after "Added to cart", the nav Cart
    *     link pulses once so the success is visible site-wide.
    * --------------------------------------------------------- */
   if (document.querySelector('.msg-success')) {

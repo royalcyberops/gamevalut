@@ -84,6 +84,15 @@ if ($filter_slug !== '' && !preg_match('/^[a-z0-9-]{1,50}$/', $filter_slug)) {
     $filter_slug = ''; // ignore invalid slugs
 }
 
+// Search query from URL: index.php?q=elden (is_string guard: ?q[]=x sends an
+// array, and trim(array) is a fatal TypeError on PHP 8).
+$raw_q     = $_GET['q'] ?? '';
+$search_q  = is_string($raw_q) ? trim($raw_q) : '';
+if (strlen($search_q) > 100) {
+    $search_q = substr($search_q, 0, 100);
+}
+$is_searching = ($search_q !== '');
+
 try {
     // Categories + counts for the "Browse by Category" cards.
     $stmt = $conn->prepare(
@@ -107,19 +116,35 @@ try {
     }
 
     // Featured: full catalogue, or filtered to one category (prepared statement).
+    // Search (?q=) applies to the Featured grid ONLY (hero + offers stay global).
     if ($filter_slug !== '' && $active_category !== null) {
-        $stmt = $conn->prepare(
-            'SELECT g.* FROM games g JOIN categories c ON c.category_id = g.category_id ' .
-            'WHERE c.slug = ? ORDER BY g.discount_percent DESC, g.game_id ASC'
-        );
-        $stmt->execute([$filter_slug]);
+        if ($is_searching) {
+            $stmt = $conn->prepare(
+                'SELECT g.* FROM games g JOIN categories c ON c.category_id = g.category_id ' .
+                'WHERE c.slug = ? AND g.title LIKE ? ORDER BY g.discount_percent DESC, g.game_id ASC'
+            );
+            $stmt->execute([$filter_slug, '%' . $search_q . '%']);
+        } else {
+            $stmt = $conn->prepare(
+                'SELECT g.* FROM games g JOIN categories c ON c.category_id = g.category_id ' .
+                'WHERE c.slug = ? ORDER BY g.discount_percent DESC, g.game_id ASC'
+            );
+            $stmt->execute([$filter_slug]);
+        }
     } else {
         // Unknown slug? Ignore the filter and show everything.
         if ($filter_slug !== '') {
             $filter_slug = '';
         }
-        $stmt = $conn->prepare('SELECT * FROM games ORDER BY discount_percent DESC, game_id ASC');
-        $stmt->execute();
+        if ($is_searching) {
+            $stmt = $conn->prepare(
+                'SELECT g.* FROM games g WHERE 1=1 AND g.title LIKE ? ORDER BY g.discount_percent DESC, g.game_id ASC'
+            );
+            $stmt->execute(['%' . $search_q . '%']);
+        } else {
+            $stmt = $conn->prepare('SELECT * FROM games ORDER BY discount_percent DESC, game_id ASC');
+            $stmt->execute();
+        }
     }
     while ($row = $stmt->fetch()) {
         $all_games[] = $row;
@@ -191,6 +216,7 @@ require_once __DIR__ . '/includes/header.php';
     <?php endif; ?>
   </div>
   <button id="prevBtn" class="carousel-btn prev" aria-label="Previous slide">&#10094;</button>
+  <button id="pauseBtn" class="pause-btn" aria-label="Pause autoplay">II</button>
   <button id="nextBtn" class="carousel-btn next" aria-label="Next slide">&#10095;</button>
   <div id="dots" class="dots"></div>
 </section>
@@ -237,7 +263,17 @@ require_once __DIR__ . '/includes/header.php';
     ? 'Category: ' . htmlspecialchars($active_category['icon'] . ' ' . $active_category['name'])
     : 'Featured &amp; Recommended'; ?>
 </h2>
-<div class="games-grid reveal">
+<form method="get" action="index.php" class="search-bar" role="search">
+  <?php if ($filter_slug !== ''): ?>
+    <input type="hidden" name="category" value="<?php echo htmlspecialchars($filter_slug); ?>">
+  <?php endif; ?>
+  <input type="search" name="q" class="search-input" placeholder="Search games..." value="<?php echo htmlspecialchars($search_q); ?>">
+  <button type="submit" class="search-btn">Search</button>
+</form>
+<?php if ($is_searching): ?>
+  <p>Results for '<?php echo htmlspecialchars($search_q); ?>' <a href="<?php echo $filter_slug !== '' ? 'index.php?category=' . urlencode($filter_slug) : 'index.php'; ?>">Clear search &#10005;</a></p>
+<?php endif; ?>
+<div class="games-grid reveal" id="featuredGrid">
   <?php foreach ($all_games as $g): ?>
     <?php
       $gid     = (int)$g['game_id'];
@@ -271,10 +307,11 @@ require_once __DIR__ . '/includes/header.php';
     </article>
   <?php endforeach; ?>
 </div>
+<p class="empty-note" data-empty="featured" hidden>No games match this filter.</p>
 
 <!-- ================= SPECIAL OFFERS ================= -->
 <h2 class="section-title reveal">Special Offers</h2>
-<div class="games-grid reveal">
+<div class="games-grid reveal" id="offersGrid">
   <?php if (empty($offers)): ?>
     <p>No special offers right now. Check back soon.</p>
   <?php else: ?>
@@ -308,5 +345,6 @@ require_once __DIR__ . '/includes/header.php';
     <?php endforeach; ?>
   <?php endif; ?>
 </div>
+<p class="empty-note" data-empty="offers" hidden>No games match this filter.</p>
 
 <?php require_once __DIR__ . '/includes/footer.php'; ?>

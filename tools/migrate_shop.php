@@ -82,10 +82,28 @@ try {
           CONSTRAINT `fk_items_order` FOREIGN KEY (`order_id`)
             REFERENCES `orders` (`order_id`) ON DELETE CASCADE,
           CONSTRAINT `fk_items_game` FOREIGN KEY (`game_id`)
-            REFERENCES `games` (`game_id`) ON DELETE CASCADE
+            REFERENCES `games` (`game_id`) ON DELETE RESTRICT
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
     );
     shop_out('order_items table ready.', 'ok');
+
+    // 3b. Best-effort FK upgrade for existing installs: older versions used
+    // ON DELETE CASCADE on fk_items_game, which would rewrite order history
+    // when a game is deleted. Upgrade to RESTRICT. Each step is independent
+    // try/catch (constraint names may differ on old installs) — failures are
+    // safe to ignore, data is never deleted here.
+    try {
+        $pdo->exec('ALTER TABLE `order_items` DROP FOREIGN KEY `fk_items_game`');
+        shop_out('Dropped old fk_items_game (upgrading to RESTRICT).', 'ok');
+    } catch (Throwable $e) {
+        // Constraint already RESTRICT, missing, or named differently — ignore.
+    }
+    try {
+        $pdo->exec('ALTER TABLE `order_items` ADD CONSTRAINT `fk_items_game` FOREIGN KEY (`game_id`) REFERENCES `games` (`game_id`) ON DELETE RESTRICT');
+        shop_out('fk_items_game is ON DELETE RESTRICT.', 'ok');
+    } catch (Throwable $e) {
+        // Constraint already exists (e.g. fresh CREATE above) — ignore.
+    }
 
     // 4. Seed admin account (admin / Admin@123). Never overwrite an existing admin row.
     $chk = $pdo->prepare('SELECT user_id FROM `users` WHERE `username` = ? OR `email` = ? LIMIT 1');

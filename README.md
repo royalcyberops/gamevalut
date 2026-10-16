@@ -1,7 +1,8 @@
 # GameVault Shop
 
 Steam-inspired game store demo (college mini-project) — PHP + MySQL, no frameworks.
-Browse games, add to cart, check out with Cash on Delivery, track orders. Admin manages orders and catalogue.
+Sells PHYSICAL game copies (discs / boxed editions) delivered to your address — no digital downloads or keys.
+Browse games, add to cart, check out with Cash on Delivery (pay when the physical copies arrive), track orders. Admin manages orders and catalogue.
 
 ## Run (XAMPP)
 1. Start Apache + MySQL
@@ -27,8 +28,15 @@ Browse games, add to cart, check out with Cash on Delivery, track orders. Admin 
 1. Add games to cart (`cart.php`, stored in `$_SESSION`)
 2. Checkout (`checkout.php`): contact + address + delivery slot, validated server-side
 3. Order saved atomically (`orders` + `order_items` in one transaction, totals from DB prices)
-4. Status lifecycle: `Pending` → `Confirmed` → `Delivered` (admin), or `Cancelled` (user while Pending / admin anytime)
-5. Payment: Cash on Delivery (pay when games arrive)
+4. Status lifecycle: `Pending` → `Confirmed` → `Delivered` (admin advances it), or `Cancelled` (customer while `Pending` / admin anytime)
+5. Payment: Cash on Delivery only — pay in cash when the physical game copies are delivered
+
+## Buttons
+- Green (`btn-green`) = add / create — Add to Cart, Add Game, Browse category
+- Warm amber (`btn-warm`) = primary shop flow — Browse games, Proceed to Checkout, Place Order (COD), Shop Games
+- Royal (`btn-royal`) = auth — Login, Register
+- Blue (`btn-blue`) = admin save — Save (order / game edits in `admin.php`)
+- Cancel outline (`btn-cancel`) = danger — Remove (cart line), Cancel (order)
 
 ## Tables (`gamevault_db`)
 - `users` (with `is_admin` flag), `categories`, `games`

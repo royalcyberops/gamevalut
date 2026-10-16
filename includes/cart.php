@@ -59,3 +59,29 @@ function cart_clear()
 {
     $_SESSION['cart'] = [];
 }
+
+function cart_prune($valid_ids)
+{
+    // Drop session ids that no longer exist in the catalogue (ghost lines),
+    // so nav count, rendered rows, and totals always agree.
+    if (!is_array($valid_ids)) {
+        return;
+    }
+    $valid = [];
+    foreach ($valid_ids as $vid) {
+        if (is_numeric($vid)) {
+            $valid[(int) $vid] = true;
+        }
+    }
+    $cart = cart_get();
+    $changed = false;
+    foreach ($cart as $gid => $qty) {
+        if (!isset($valid[(int) $gid])) {
+            unset($cart[(int) $gid]);
+            $changed = true;
+        }
+    }
+    if ($changed) {
+        $_SESSION['cart'] = $cart;
+    }
+}

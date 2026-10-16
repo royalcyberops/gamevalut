@@ -9,11 +9,7 @@
     <div class="footer-col">
       <div class="logo footer-logo" style="margin-bottom:14px;"><span class="logo-mark">GV</span> <span class="logo-text">Game<strong>Vault</strong></span></div>
       <p class="footer-desc">An original college mini-project. A Steam-inspired game store demo with no affiliated branding.</p>
-      <div class="footer-social">
-        <a href="#" class="footer-social-link" aria-label="Discord">&#128179;</a>
-        <a href="#" class="footer-social-link" aria-label="Twitter">&#128178;</a>
-        <a href="#" class="footer-social-link" aria-label="Email">&#128274;</a>
-      </div>
+      <p class="footer-desc"><span>Cash on Delivery</span> &bull; <span>60-day delivery slots</span> &bull; <span>Secure checkout</span></p>
     </div>
     <div class="footer-col">
       <h4>Store</h4>

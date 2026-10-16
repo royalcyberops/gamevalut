@@ -18,7 +18,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
   /* ---------- regex rules (must match server-side PHP rules) ---------- */
   var RE = {
-    name: /^[A-Za-z ]{3,}$/,          // letters+spaces, min 3 chars
+    name: /^[A-Za-z ]{3,100}$/,        // letters+spaces, 3-100 chars (mirrors server)
     email: /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/, // standard email
     mobile: /^[6-9][0-9]{9}$/,        // Indian 10-digit, starts 6-9
     username: /^[A-Za-z0-9_]{4,15}$/, // 4-15 chars, letters/digits/_
@@ -163,6 +163,18 @@ document.addEventListener('DOMContentLoaded', function () {
       showErr('deliveryTime', 'Pick a delivery time.');
       ok = false;
     } else clearErr('deliveryTime');
+
+    // Notes are optional; enforce max 500 chars (mirrors server).
+    // Skip silently if #notes / #err-notes are absent on this page.
+    var notesEl = document.getElementById('notes');
+    if (notesEl) {
+      var notes = notesEl.value.trim();
+      var notesErr = document.getElementById('err-notes');
+      if (notes.length > 500) {
+        if (notesErr) notesErr.textContent = 'Notes must be 500 characters or less.';
+        ok = false;
+      } else if (notesErr) notesErr.textContent = '';
+    }
 
     return ok;
   }

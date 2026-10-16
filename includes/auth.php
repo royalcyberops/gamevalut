@@ -9,8 +9,9 @@
 //  - The guard does NOT trust $_SESSION alone. It re-checks that the
 //    user_id still exists in the users table. This prevents a stale
 //    session (e.g. account deleted) from reaching the DB layer, where
-//    the bookings FK (REFERENCES users.user_id) would throw ERROR 1452
-//    and fail every INSERT with a generic "Could not save" message.
+//    the fk_orders_user FK (orders.user_id REFERENCES users.user_id)
+//    would throw ERROR 1452 and fail every INSERT with a generic
+//    "Could not save" message.
 
 require_once __DIR__ . '/session.php'; // hardened bootstrap (the ONLY session_start)
 
@@ -66,7 +67,7 @@ try {
 }
 
 // Row gone? Clear the session and force a fresh login so the page never
-// tries to write a booking referencing a non-existent user.
+// tries to write an order referencing a non-existent user (fk_orders_user).
 if (!$exists) {
     $_SESSION = [];
     session_unset();

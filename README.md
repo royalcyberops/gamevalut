@@ -11,6 +11,10 @@ Browse games, add to cart, check out with Card or UPI, track orders. Admin manag
 4. Open `http://localhost/steam/tools/migrate_shop.php` (adds shop tables + admin account; safe to re-run)
 5. Open `http://localhost/steam/index.php`
 
+## Troubleshooting
+- **Cover images missing** (letter tiles instead of box art)? The image files ship with the repo — the database rows just need their paths. Open `http://localhost/steam/tools/fix_images.php` once; it repairs missing / stale `games.image` values automatically (safe to re-run, add `?dry=1` to preview).
+- **"Already installed" when re-running setup.php**? That is normal — setup never wipes existing data. To rebuild from scratch, use the wipe checkbox on the setup page.
+
 ## Test accounts
 - Admin: `admin` / `Admin@123` (Staff panel at `admin.php`)
 - Customer: register a new account via `register.php`
